@@ -1,3 +1,0 @@
-{"ts": "2026-04-08T22:14:54.326165+00:00", "epoch": 1775686494.3261917, "type": "run_start", "agent_name": "ceo", "run_id": "run-20260408-221454-0"}
-{"ts": "2026-04-08T22:14:54.326316+00:00", "epoch": 1775686494.3263235, "type": "scaffold_created", "agent_name": "ceo", "path": "autoresearch/test/ceo/run-20260408-221454-0"}
-{"ts": "2026-04-08T22:14:54.333338+00:00", "epoch": 1775686494.3333533, "type": "agent_run_start", "agent_name": "ceo", "category": "accuracy", "prompt_index": 0, "prompt_preview": "We need to add a real-time notification system to our platform. This is a completely new feature \u2014 there has been no prior scoping, no architecture work, and no existing code for notifications anywher"}

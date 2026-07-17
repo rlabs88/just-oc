@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/beads/resources/ASYNC_GATES.md

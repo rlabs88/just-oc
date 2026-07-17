@@ -1,2 +1,0 @@
-{"ts": "2026-04-09T06:19:45.875950+00:00", "epoch": 1775715585.8759668, "type": "run_start", "agent_name": "architect_lead", "run_id": "run-20260409-061945-0"}
-{"ts": "2026-04-09T06:19:45.876001+00:00", "epoch": 1775715585.8760056, "type": "scaffold_created", "agent_name": "architect_lead", "path": "autoresearch/test/architect_lead/run-20260409-061945-0"}

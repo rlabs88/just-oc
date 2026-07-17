@@ -1,2 +1,0 @@
-{"ts": "2026-04-09T06:12:28.792460+00:00", "epoch": 1775715148.7924776, "type": "run_start", "agent_name": "business_analyst_worker", "run_id": "run-20260409-061228-0"}
-{"ts": "2026-04-09T06:12:28.792506+00:00", "epoch": 1775715148.7925112, "type": "scaffold_created", "agent_name": "business_analyst_worker", "path": "autoresearch/test/business_analyst_worker/run-20260409-061228-0"}

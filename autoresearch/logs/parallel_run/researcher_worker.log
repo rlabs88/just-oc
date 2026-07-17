@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221455-1 | agents=1 | mode=optimize
-
-Optimization: researcher_worker | max_rounds=20
-
-Evaluating: researcher_worker
-Log: autoresearch/logs/researcher_worker/run-20260408-221455-0.jsonl
-  Category: accuracy
-   prompt 0: You are dispatched by scoper_lead to investigate the causal 
-mechanism by which c...

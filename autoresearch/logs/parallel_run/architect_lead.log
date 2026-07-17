@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221455-1 | agents=1 | mode=optimize
-
-Optimization: architect_lead | max_rounds=20
-
-Evaluating: architect_lead
-Log: autoresearch/logs/architect_lead/run-20260408-221455-0.jsonl
-  Category: accuracy
-   prompt 0: You are the architect_lead in a multi-agent development pipeline. 
-You have recei...

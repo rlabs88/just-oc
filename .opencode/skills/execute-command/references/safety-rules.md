@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/execute-command/references/safety-rules.md

@@ -1,3 +1,0 @@
-{"ts": "2026-04-08T22:14:55.646754+00:00", "epoch": 1775686495.6467812, "type": "run_start", "agent_name": "researcher_worker", "run_id": "run-20260408-221455-0"}
-{"ts": "2026-04-08T22:14:55.646871+00:00", "epoch": 1775686495.6468763, "type": "scaffold_created", "agent_name": "researcher_worker", "path": "autoresearch/test/researcher_worker/run-20260408-221455-0"}
-{"ts": "2026-04-08T22:14:55.664533+00:00", "epoch": 1775686495.6645575, "type": "agent_run_start", "agent_name": "researcher_worker", "category": "accuracy", "prompt_index": 0, "prompt_preview": "You are dispatched by scoper_lead to investigate the causal mechanism by which content delivery networks (CDNs) reduce latency for end users. This is a scoping-phase investigation: the lead is evaluat"}

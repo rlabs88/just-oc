@@ -1,0 +1,61 @@
+apiVersion: agent-toolkit/v1
+
+osrc:
+  - id: claude-code-system-prompts
+    description: Extracted Claude Code prompt components used as a comparative design reference
+    spec: Piebald-AI/claude-code-system-prompts
+    guide:
+      purpose: Study Claude Code identity, safety, task, tool, and communication prompt composition without creating a runtime dependency
+      explore_when:
+        - Designing or reviewing shared base prompts
+        - Comparing role, tool, safety, and task-boundary instructions
+      skip_when:
+        - Implementing unrelated plugin behavior
+      importance: high
+      tags: [prompts, claude-code, reference, deep-wiki]
+      related:
+        skills: [deep-wiki]
+
+  - id: codex
+    description: Official OpenAI Codex source and base instruction references
+    spec: openai/codex
+    guide:
+      purpose: Study Codex base instructions and harness behavior as a primary prompt-architecture reference
+      explore_when:
+        - Designing or reviewing shared base prompts
+        - Comparing repository, tool, autonomy, and communication behavior
+      skip_when:
+        - Implementing unrelated plugin behavior
+      importance: high
+      tags: [prompts, codex, reference, deep-wiki]
+      related:
+        skills: [deep-wiki]
+
+  - id: opencode
+    description: Official OpenCode source for plugin, agent transform, hook, permission, and provider contracts
+    spec: anomalyco/opencode
+    guide:
+      purpose: Verify the exact OpenCode extension points that just-oc plugins target
+      explore_when:
+        - Implementing or reviewing an OpenCode plugin or loader
+        - Checking agent transforms, hooks, tool contracts, authentication, or model configuration
+      skip_when:
+        - Editing model-neutral prompt prose only
+      importance: high
+      tags: [opencode, plugins, runtime, reference, deep-wiki]
+      related:
+        skills: [deep-wiki]
+
+osrc_graph:
+  - from: claude-code-system-prompts
+    to: codex
+    relation: contrasts_with
+    note: Compare independently evolved coding-agent prompt components; do not copy either wholesale.
+  - from: opencode
+    to: claude-code-system-prompts
+    relation: hosts_adapted_concepts_from
+    note: OpenCode owns runtime behavior; prompt references inform model-neutral composition only.
+  - from: opencode
+    to: codex
+    relation: hosts_adapted_concepts_from
+    note: OpenCode owns runtime behavior; prompt references inform model-neutral composition only.

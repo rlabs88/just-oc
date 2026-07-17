@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/deep-wiki/SKILL.md

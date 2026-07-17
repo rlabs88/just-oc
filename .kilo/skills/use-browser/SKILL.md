@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/use-browser/SKILL.md

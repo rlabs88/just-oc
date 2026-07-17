@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/playwright-cli/references/test-generation.md

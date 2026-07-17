@@ -1,6 +1,0 @@
-[submodule "plugin/oh-my-openagent"]
-	path = plugin/oh-my-openagent
-	url = https://github.com/code-yeongyu/oh-my-openagent.git
-[submodule "plugin/zellij-mcp-server"]
-	path = plugin/zellij-mcp-server
-	url = https://github.com/EugeneChan00/zellij-mcp-server.git

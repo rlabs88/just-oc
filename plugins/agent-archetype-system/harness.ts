@@ -1,4 +1,3 @@
-import type { Config } from "@opencode-ai/plugin"
 import { baseIdentity } from "./prompts/base-identity"
 import { baseTask } from "./prompts/base-task"
 import { sharedSecurity } from "./prompts/security"
@@ -10,6 +9,7 @@ import {
   type HarnessOptions,
   type OpenCodeAgentConfig,
   type OpenCodePermissionConfig,
+  type OpenCodeV2Config,
   type RoleId,
 } from "./types"
 
@@ -41,20 +41,17 @@ export function createAgentConfigs(
 }
 
 export function registerArchetypes(
-  config: Config,
+  config: OpenCodeV2Config,
   registry: ArchetypeRegistry,
   options: HarnessOptions = {},
 ): void {
   const agents = createAgentConfigs(registry, options)
-  const target = config as unknown as {
-    agent?: Record<string, OpenCodeAgentConfig | undefined>
-  }
-  target.agent ??= {}
+  config.agent ??= {}
   for (const id of ROLE_IDS) {
     const agent = agents[id]
     if (!agent) continue
-    if (target.agent[id]) throw new Error(`OpenCode agent ID is already registered: ${id}`)
-    target.agent[id] = agent
+    if (config.agent[id]) throw new Error(`OpenCode agent ID is already registered: ${id}`)
+    config.agent[id] = agent
   }
 }
 

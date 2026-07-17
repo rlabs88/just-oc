@@ -44,7 +44,9 @@ bun run check
 The archetype bundle composes detailed model-neutral base prompts with each
 role's declarative identity, security additions, task behavior, model settings,
 permissions, independent-plugin selections, and supported hooks. OpenCode owns
-all runtime execution and session state.
+all runtime execution and session state. Cortex is the default agent; Cortex,
+Flux, and Zen all use `mode: all`, so the TUI can cycle among them as primary
+session agents and they remain available for subagent invocation.
 
 `kilo.jsonc` is the only tracked Kilo-specific configuration. See `LICENSE` for
 repository licensing.

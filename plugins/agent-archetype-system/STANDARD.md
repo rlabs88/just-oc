@@ -50,10 +50,11 @@ no registration logic or side effects. Local metadata is consumed before the
 agent object reaches OpenCode.
 
 The implementation targets `@opencode-ai/plugin` and `@opencode-ai/sdk` 1.17.5.
-The SDK V2 `AgentConfig` and `PermissionConfig` types are the compatibility
-contract. The plugin package's config-hook type currently exposes an older SDK
-shape, so `harness.ts` contains the single narrow type bridge to the V2 agent
-table; do not spread compatibility casts elsewhere.
+The SDK V2 `Config`, `AgentConfig`, and `PermissionConfig` types are the
+compatibility contract. The plugin package's config-hook type currently exposes
+an older SDK shape, so `index.ts` contains the single narrow host-boundary cast;
+the harness accepts only the V2 config contract. Do not spread compatibility
+casts elsewhere.
 
 ## Plugin and tool ownership
 
@@ -74,7 +75,9 @@ plugin does not install a parallel permission hook.
 
 Disabled roles are omitted from the generated agent table. Delegation
 permissions referencing a disabled archetype are filtered from enabled agent
-objects. Hook routing ignores disabled and unknown agents.
+objects. Hook routing ignores disabled and unknown agents. Every enabled
+archetype uses `mode: all`, making it selectable as a primary session agent and
+callable as a subagent. Cortex is the project `default_agent`.
 
 ## Adding an archetype
 

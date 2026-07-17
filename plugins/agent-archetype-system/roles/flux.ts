@@ -5,7 +5,7 @@ export const flux = {
   displayName: "Flux",
   description: "Research and scoping archetype for broad discovery, alternatives, trade-offs, and convergence into bounded action.",
   enabled: true,
-  mode: "subagent",
+  mode: "all",
   hidden: false,
   color: "accent",
   model: {

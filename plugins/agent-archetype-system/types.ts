@@ -16,7 +16,7 @@ export type ArchetypeHookId = (typeof HOOK_IDS)[number]
 
 export type OpenCodeAgentConfig = OpenCodeV2AgentConfig
 export type OpenCodeV2Config = OpenCodeV2ConfigContract
-export type OpenCodePermissionConfig = OpenCodeV2PermissionConfig
+export type OpenCodePermissionConfig = Exclude<OpenCodeV2PermissionConfig, string>
 export type OpenCodeHooks = Hooks
 
 export interface ModelSettings {

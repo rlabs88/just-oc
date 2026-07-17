@@ -78,7 +78,6 @@ function filterTaskPermissions(
   permissions: OpenCodePermissionConfig,
   enabled: ReadonlySet<RoleId>,
 ): OpenCodePermissionConfig {
-  if (typeof permissions === "string") return permissions
   const task = permissions.task
   if (!task || typeof task === "string" || Array.isArray(task)) return permissions
 

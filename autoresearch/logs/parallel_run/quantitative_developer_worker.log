@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221454-1 | agents=1 | mode=optimize
-
-Optimization: quantitative_developer_worker | max_rounds=20
-
-Evaluating: quantitative_developer_worker
-Log: autoresearch/logs/quantitative_developer_worker/run-20260408-221454-0.jsonl
-  Category: accuracy
-   prompt 0: You are the quantitative_developer_worker, dispatched by the 
-scoper_lead to vali...

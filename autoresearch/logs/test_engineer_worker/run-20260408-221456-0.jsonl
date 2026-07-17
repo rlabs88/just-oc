@@ -1,3 +1,0 @@
-{"ts": "2026-04-08T22:14:56.830387+00:00", "epoch": 1775686496.8304117, "type": "run_start", "agent_name": "test_engineer_worker", "run_id": "run-20260408-221456-0"}
-{"ts": "2026-04-08T22:14:56.830472+00:00", "epoch": 1775686496.830477, "type": "scaffold_created", "agent_name": "test_engineer_worker", "path": "autoresearch/test/test_engineer_worker/run-20260408-221456-0"}
-{"ts": "2026-04-08T22:14:56.834613+00:00", "epoch": 1775686496.8346372, "type": "agent_run_start", "agent_name": "test_engineer_worker", "category": "accuracy", "prompt_index": 0, "prompt_preview": "You are dispatched by builder_lead in red-phase mode. Your task is to author a failing test for the following claim: 'the /api/users endpoint returns HTTP 401 for requests that do not include a valid "}

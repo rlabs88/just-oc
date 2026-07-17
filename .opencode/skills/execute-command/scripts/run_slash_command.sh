@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/execute-command/scripts/run_slash_command.sh

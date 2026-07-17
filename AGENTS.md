@@ -1,63 +1,43 @@
-# Just-OC OpenCode/Kilo Configuration
+---
+kind: agent-instructions
+version: 1
+scope: "**/*"
+status: active
+inherits: null
+applies_to: ["**/*"]
+---
 
-This repository contains unified OpenCode/Kilo plugin configurations for a mono repo structure.
+# just-oc Agent Policy
 
-## Structure
+## Read first
 
-```
-.just-oc/
-├── .opencode/          # OpenCode/Kilo config (symlink to system)
-│   ├── agents/         # Custom agent definitions
-│   ├── commands/       # Custom slash commands
-│   ├── skills/         # Skill definitions
-│   └── config/         # Shared configuration snippets
-├── .kilocode/          # Kilo-specific overrides
-│   └── skills/         # Kilo-specific skills
-├── plugins/            # Plugin source code
-├── kilo.jsonc          # Kilo configuration
-└── AGENTS.md           # This file
-```
+Read the root `STANDARD.md`, then the nearest plugin checkpoint. Treat the
+OpenCode plugin types and official OpenCode source as the runtime contract. Use
+Linear as the work ledger; do not add issue-specific markdown reports.
 
-## Symlink Setup
+## Operating rules
 
-To use this configuration with OpenCode/Kilo, create symlinks:
+- Keep maintained source under `plugins/<bundle>/`.
+- Keep `.opencode/plugins/` files as thin re-export loaders only.
+- Let OpenCode own sessions, execution, permissions, tools, authentication, and the agent loop.
+- Keep prompts model-neutral unless an issue explicitly requires a model-specific adapter.
+- Never commit credentials, absolute machine paths, generated runtime state, copied skill trees, or dependency directories.
+- Use Bun for dependency and script execution; retain one `bun.lock`.
 
-```bash
-# For OpenCode
-ln -s /path/to/just-oc/.opencode ~/.config/opencode
+## Change boundaries
 
-# For Kilo Code
-ln -s /path/to/just-oc/.opencode ~/.config/kilo/opencode
-# OR
-ln -s /path/to/just-oc/.opencode ~/.kilo/opencode
-```
+Add `STANDARD.md` and `AGENTS.md` together only for meaningful ownership
+boundaries. Do not recreate legacy agents, research, analysis, deployment,
+spike, general test, or orchestration directories in this repository.
 
-## Available Agents
+## Validation
 
-- **general** - General purpose research and multi-step task execution
-- **explore** - Fast read-only codebase exploration
+Run `bun install --frozen-lockfile`, `bun run typecheck`, and
+`bun run validate:plugins`. For new agent transforms, add deterministic ignored
+smoke validation and remove its fixtures after the run.
 
-## Available Skills
+## Handoff
 
-- **api-design** - REST API design best practices
-- **code-review** - Code review guidelines and checklist
-
-## Available Commands
-
-Commands can be invoked with `/command-name` in the OpenCode/Kilo interface.
-
-## Adding New Agents
-
-1. Create a `.md` file in `.opencode/agents/`
-2. Follow the agent format with YAML frontmatter
-3. Commit and push to update the symlinked configuration
-
-## Adding New Skills
-
-1. Create a directory in `.opencode/skills/`
-2. Add a `SKILL.md` file with name matching the directory
-3. Follow the Agent Skills standard format
-
-## License
-
-See individual plugin and skill directories for respective licenses.
+Report changed bundles, OpenCode extension points used, validation commands,
+and residual provider/runtime limitations. Link the implementing Linear issue
+and PR rather than duplicating their history here.

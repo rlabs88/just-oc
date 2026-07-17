@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/beads/resources/BOUNDARIES.md

@@ -1,3 +1,0 @@
-{"ts": "2026-04-08T22:14:55.405585+00:00", "epoch": 1775686495.4056087, "type": "run_start", "agent_name": "architect_lead", "run_id": "run-20260408-221455-0"}
-{"ts": "2026-04-08T22:14:55.405645+00:00", "epoch": 1775686495.4056509, "type": "scaffold_created", "agent_name": "architect_lead", "path": "autoresearch/test/architect_lead/run-20260408-221455-0"}
-{"ts": "2026-04-08T22:14:55.407286+00:00", "epoch": 1775686495.407294, "type": "agent_run_start", "agent_name": "architect_lead", "category": "accuracy", "prompt_index": 0, "prompt_preview": "You are the architect_lead in a multi-agent development pipeline. You have received the following approved Strategic Slice Brief from the scoper_lead.\n\n---\nSTRATEGIC SLICE BRIEF: WebSocket Notificatio"}

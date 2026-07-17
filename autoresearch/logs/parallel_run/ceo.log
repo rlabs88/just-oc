@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221454-1 | agents=1 | mode=optimize
-
-Optimization: ceo | max_rounds=20
-
-Evaluating: ceo
-Log: autoresearch/logs/ceo/run-20260408-221454-0.jsonl
-  Category: accuracy
-   prompt 0: We need to add a real-time notification system to our platform. 
-This is a comple...

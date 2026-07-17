@@ -1,1 +1,0 @@
-/home/zz/.agent/skills/beads/adr/0001-bd-prime-as-source-of-truth.md

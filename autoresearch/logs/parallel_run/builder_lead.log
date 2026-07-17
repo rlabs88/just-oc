@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221458-1 | agents=1 | mode=optimize
-
-Optimization: builder_lead | max_rounds=20
-
-Evaluating: builder_lead
-Log: autoresearch/logs/builder_lead/run-20260408-221458-0.jsonl
-  Category: accuracy
-   prompt 0: You are the builder_lead agent. You have been given the following 
-approved work ...

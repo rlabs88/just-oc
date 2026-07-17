@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["bun"]
+  },
+  "include": [".opencode/plugins/**/*.ts", "plugins/**/*.ts"],
+  "exclude": ["node_modules"]
+}

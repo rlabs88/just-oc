@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221454-1 | agents=1 | mode=optimize
-
-Optimization: scoper_lead | max_rounds=20
-
-Evaluating: scoper_lead
-Log: autoresearch/logs/scoper_lead/run-20260408-221454-0.jsonl
-  Category: accuracy
-   prompt 0: You are the Strategic Scoper Lead. The CEO has dispatched you with 
-the following...

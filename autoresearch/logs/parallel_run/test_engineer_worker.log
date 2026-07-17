@@ -1,9 +1,0 @@
-AutoResearch | run_id=run-20260408-221456-1 | agents=1 | mode=optimize
-
-Optimization: test_engineer_worker | max_rounds=20
-
-Evaluating: test_engineer_worker
-Log: autoresearch/logs/test_engineer_worker/run-20260408-221456-0.jsonl
-  Category: accuracy
-   prompt 0: You are dispatched by builder_lead in red-phase mode. Your task is 
-to author a f...

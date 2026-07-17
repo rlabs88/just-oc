@@ -7,7 +7,7 @@ three ownership bundles:
 
 - `plugins/background-tasks/` — background task tools and lifecycle state.
 - `plugins/zellij/` — Zellij discovery and control tools.
-- `plugins/agent-archetype-system/` — Cortex, Flux, and Zen prompt/agent transforms (introduced by RT-236).
+- `plugins/agent-archetype-system/` — typed Cortex, Flux, and Zen prompt/agent transforms.
 
 ## Install
 
@@ -40,6 +40,11 @@ execution evidence in Linear. Validate with:
 bun install --frozen-lockfile
 bun run check
 ```
+
+The archetype bundle composes detailed model-neutral base prompts with each
+role's declarative identity, security additions, task behavior, model settings,
+permissions, independent-plugin selections, and supported hooks. OpenCode owns
+all runtime execution and session state.
 
 `kilo.jsonc` is the only tracked Kilo-specific configuration. See `LICENSE` for
 repository licensing.

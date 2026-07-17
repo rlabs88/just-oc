@@ -1,0 +1,96 @@
+import type { Config } from "@opencode-ai/plugin"
+import { baseIdentity } from "./prompts/base-identity"
+import { baseTask } from "./prompts/base-task"
+import { sharedSecurity } from "./prompts/security"
+import { enabledArchetypes, validateRegistry } from "./registry"
+import {
+  ROLE_IDS,
+  type ArchetypeConfig,
+  type ArchetypeRegistry,
+  type HarnessOptions,
+  type OpenCodeAgentConfig,
+  type OpenCodePermissionConfig,
+  type RoleId,
+} from "./types"
+
+export function composePrompt(role: ArchetypeConfig): string {
+  const roleSecurity = role.prompts.security.length > 0
+    ? role.prompts.security.map((addition) => `- ${addition}`).join("\n")
+    : "No role-specific security additions."
+
+  return [
+    section("Base Identity", baseIdentity),
+    section("Role Identity", role.prompts.identity),
+    section("Shared Security", sharedSecurity),
+    section("Role Security Additions", roleSecurity),
+    section("Base Task Behavior", baseTask),
+    section("Role Task Behavior", role.prompts.task),
+  ].join("\n\n") + "\n"
+}
+
+export function createAgentConfigs(
+  registry: ArchetypeRegistry,
+  options: HarnessOptions = {},
+): Partial<Record<RoleId, OpenCodeAgentConfig>> {
+  validateRegistry(registry)
+  const enabled = new Set(enabledArchetypes(registry, options).map((role) => role.id))
+  return Object.fromEntries(enabledArchetypes(registry, options).map((role) => [
+    role.id,
+    toAgentConfig(role, enabled),
+  ]))
+}
+
+export function registerArchetypes(
+  config: Config,
+  registry: ArchetypeRegistry,
+  options: HarnessOptions = {},
+): void {
+  const agents = createAgentConfigs(registry, options)
+  const target = config as unknown as {
+    agent?: Record<string, OpenCodeAgentConfig | undefined>
+  }
+  target.agent ??= {}
+  for (const id of ROLE_IDS) {
+    const agent = agents[id]
+    if (!agent) continue
+    if (target.agent[id]) throw new Error(`OpenCode agent ID is already registered: ${id}`)
+    target.agent[id] = agent
+  }
+}
+
+function toAgentConfig(
+  role: ArchetypeConfig,
+  enabled: ReadonlySet<RoleId>,
+): OpenCodeAgentConfig {
+  return {
+    description: role.description,
+    mode: role.mode,
+    hidden: role.hidden,
+    color: role.color,
+    model: role.model.model,
+    variant: role.model.variant,
+    temperature: role.model.temperature,
+    top_p: role.model.topP,
+    steps: role.model.steps,
+    permission: filterTaskPermissions(role.permissions, enabled),
+    prompt: composePrompt(role),
+  }
+}
+
+function filterTaskPermissions(
+  permissions: OpenCodePermissionConfig,
+  enabled: ReadonlySet<RoleId>,
+): OpenCodePermissionConfig {
+  if (typeof permissions === "string") return permissions
+  const task = permissions.task
+  if (!task || typeof task === "string" || Array.isArray(task)) return permissions
+
+  const filteredTask = Object.fromEntries(Object.entries(task).filter(([target]) => {
+    return target === "*" || !ROLE_IDS.includes(target as RoleId) || enabled.has(target as RoleId)
+  }))
+  return { ...permissions, task: filteredTask }
+}
+
+function section(title: string, content: string): string {
+  return `# ${title}\n\n${content.trim()}`
+}

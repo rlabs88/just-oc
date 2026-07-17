@@ -1,0 +1,34 @@
+apiVersion: agent-toolkit/v1
+
+osrc:
+  - id: claude-code-system-prompts
+    description: Extracted Claude Code prompt components used as a comparative design reference
+    spec: Piebald-AI/claude-code-system-prompts
+    guide:
+      purpose: Study current Claude Code identity, safety, task, tool, and communication prompt composition without creating a copied runtime dependency
+      explore_when:
+        - Designing or reviewing just-oc shared base prompts
+        - Comparing role, tool, safety, and task-boundary instructions
+      skip_when:
+        - Implementing unrelated plugin runtime behavior
+      importance: high
+      tags: [prompts, claude-code, reference]
+
+  - id: codex
+    description: Official OpenAI Codex source and base instruction references
+    spec: openai/codex
+    guide:
+      purpose: Study current Codex base instructions and harness behavior as a primary prompt-architecture reference
+      explore_when:
+        - Designing or reviewing just-oc shared base prompts
+        - Comparing repository, tool, autonomy, and communication behavior
+      skip_when:
+        - Implementing unrelated plugin runtime behavior
+      importance: high
+      tags: [prompts, codex, reference]
+
+osrc_graph:
+  - from: claude-code-system-prompts
+    to: codex
+    relation: contrasts_with
+    note: Compare independently evolved coding-agent prompt components; do not merge or copy them wholesale.

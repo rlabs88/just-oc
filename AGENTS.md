@@ -1,63 +1,28 @@
-# Just-OC OpenCode/Kilo Configuration
+# just-oc Agent Policy
 
-This repository contains unified OpenCode/Kilo plugin configurations for a mono repo structure.
+Read `STANDARD.md` and the linked RT-234 architecture record before changing
+repository structure, agent roles, plugin boundaries, or persistence behavior.
 
-## Structure
+Until RT-235 merges, treat the current tree as a legacy baseline:
 
-```
-.just-oc/
-├── .opencode/          # OpenCode/Kilo config (symlink to system)
-│   ├── agents/         # Custom agent definitions
-│   ├── commands/       # Custom slash commands
-│   ├── skills/         # Skill definitions
-│   └── config/         # Shared configuration snippets
-├── .kilocode/          # Kilo-specific overrides
-│   └── skills/         # Kilo-specific skills
-├── plugins/            # Plugin source code
-├── kilo.jsonc          # Kilo configuration
-└── AGENTS.md           # This file
-```
+- preserve the exact baseline through `legacy/pre-agent-archetypes` before
+  cleanup;
+- do not migrate the old agent trees into new role sources by default;
+- keep pre-existing case-collision modifications and unrelated user work intact;
+- never restore or print the historical provider credential;
+- use environment/secret-manager injection and keep runtime state out of Git.
 
-## Symlink Setup
+For the selected target:
 
-To use this configuration with OpenCode/Kilo, create symlinks:
+- Bun is the single package manager;
+- each retained plugin owns its folder, entry point, state, and lifecycle tests;
+- Agent Archetypes uses only `prompts/` and `roles/` as configuration
+  subfolders, with executable logic flat at its root;
+- tools remain owned by the independent plugins that provide them;
+- OpenCode owns sessions, execution, permissions, and the agent loop;
+- typed role sources are canonical; generated OpenCode agents are not edited;
+- add nested `STANDARD.md` or `AGENTS.md` only when inherited guidance is
+  insufficient for a substantial boundary.
 
-```bash
-# For OpenCode
-ln -s /path/to/just-oc/.opencode ~/.config/opencode
-
-# For Kilo Code
-ln -s /path/to/just-oc/.opencode ~/.config/kilo/opencode
-# OR
-ln -s /path/to/just-oc/.opencode ~/.kilo/opencode
-```
-
-## Available Agents
-
-- **general** - General purpose research and multi-step task execution
-- **explore** - Fast read-only codebase exploration
-
-## Available Skills
-
-- **api-design** - REST API design best practices
-- **code-review** - Code review guidelines and checklist
-
-## Available Commands
-
-Commands can be invoked with `/command-name` in the OpenCode/Kilo interface.
-
-## Adding New Agents
-
-1. Create a `.md` file in `.opencode/agents/`
-2. Follow the agent format with YAML frontmatter
-3. Commit and push to update the symlinked configuration
-
-## Adding New Skills
-
-1. Create a directory in `.opencode/skills/`
-2. Add a `SKILL.md` file with name matching the directory
-3. Follow the Agent Skills standard format
-
-## License
-
-See individual plugin and skill directories for respective licenses.
+RT-235 owns cleanup. RT-236 owns Agent Archetypes. Do not implement later gates
+on the legacy tree or bypass their validation/rollback boundaries.

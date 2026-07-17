@@ -18,12 +18,14 @@ and SDK V2 types rather than memory or legacy spike code.
 ## Operating rules
 
 - Preserve the exact six-section prompt order.
+- Preserve `mode: all` for every archetype and Cortex as the project default agent.
 - Keep shared prompts model-neutral and role objects declarative.
 - Keep executable logic flat at the plugin root.
 - Let OpenCode own sessions, tools, permissions, execution, and the agent loop.
 - Route hooks from host-provided role/session identity and guard every role-specific effect.
 - Keep independent tool plugins independent; deduplicate only their stable IDs.
 - Reject unknown plugin and hook references and non-portable prompt content.
+- Keep the legacy-plugin-to-V2-config cast confined to `index.ts`.
 
 ## Change boundaries
 

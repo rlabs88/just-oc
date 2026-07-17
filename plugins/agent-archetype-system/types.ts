@@ -1,6 +1,7 @@
 import type { Hooks } from "@opencode-ai/plugin"
 import type {
   AgentConfig as OpenCodeV2AgentConfig,
+  Config as OpenCodeV2ConfigContract,
   PermissionConfig as OpenCodeV2PermissionConfig,
 } from "@opencode-ai/sdk/v2"
 
@@ -14,6 +15,7 @@ export const HOOK_IDS = ["tool-audit"] as const
 export type ArchetypeHookId = (typeof HOOK_IDS)[number]
 
 export type OpenCodeAgentConfig = OpenCodeV2AgentConfig
+export type OpenCodeV2Config = OpenCodeV2ConfigContract
 export type OpenCodePermissionConfig = OpenCodeV2PermissionConfig
 export type OpenCodeHooks = Hooks
 
@@ -36,7 +38,7 @@ export interface ArchetypeConfig {
   readonly displayName: string
   readonly description: string
   readonly enabled: boolean
-  readonly mode: NonNullable<OpenCodeAgentConfig["mode"]>
+  readonly mode: "all"
   readonly hidden: boolean
   readonly color: NonNullable<OpenCodeAgentConfig["color"]>
   readonly model: ModelSettings

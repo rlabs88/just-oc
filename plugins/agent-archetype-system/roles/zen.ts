@@ -5,7 +5,7 @@ export const zen = {
   displayName: "Zen",
   description: "Knowledge-plane archetype for retrieval, synthesis, provenance, contradiction detection, and durable current truth.",
   enabled: true,
-  mode: "subagent",
+  mode: "all",
   hidden: false,
   color: "info",
   model: {

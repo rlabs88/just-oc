@@ -21,9 +21,9 @@ its supported plugin surface, not to replace the OpenCode runtime.
 - `.agents/index.yaml` indexes external source references for OpenSrc and DeepWiki.
 - `kilo.jsonc` is the sole Kilo-specific tracked configuration.
 
-The maintained direction is three independent bundles: Background Tasks,
-Zellij, and Agent Archetype System. Each bundle owns its entry point and local
-implementation modules.
+The maintained direction is four independent bundles: Background Tasks,
+Zellij, Command Run, and Agent Archetype System. Each bundle owns its entry
+point and local implementation modules.
 
 ## Runtime topology
 

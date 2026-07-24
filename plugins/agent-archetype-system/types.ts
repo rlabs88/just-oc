@@ -8,7 +8,7 @@ import type {
 export const ROLE_IDS = ["cortex", "flux", "zen"] as const
 export type RoleId = (typeof ROLE_IDS)[number]
 
-export const PLUGIN_IDS = ["background-tasks", "zellij"] as const
+export const PLUGIN_IDS = ["background-tasks", "zellij", "command-run"] as const
 export type IndependentPluginId = (typeof PLUGIN_IDS)[number]
 
 export const HOOK_IDS = ["tool-audit"] as const
@@ -58,4 +58,22 @@ export interface HookRoute {
   readonly roleId: RoleId
   readonly hookId: ArchetypeHookId
   readonly sessionID: string
+}
+
+export const TASK_TYPES = [
+  "implementation",
+  "debugging",
+  "architecture",
+  "review",
+  "research",
+  "visual_inspection",
+] as const
+export type TaskType = (typeof TASK_TYPES)[number]
+
+export interface TaskCheckpoint {
+  readonly version: 1
+  readonly task_group: string
+  readonly task_type: TaskType
+  readonly status: "doing" | "question" | "done"
+  readonly compact_context: string
 }

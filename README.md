@@ -12,13 +12,17 @@ three ownership bundles:
 ## Install
 
 Install Bun, authenticate OpenCode with the OpenAI OAuth flow associated with a
-ChatGPT subscription, then run:
+ChatGPT subscription, then install the project locally and back the global
+OpenCode plugin wrappers with this checkout:
 
 ```bash
-bun install
-bun run check
+just oc install
 opencode
 ```
+
+`just oc install` runs the frozen Bun install and writes generated wrappers to
+`~/.config/opencode/plugins`. A project-local loader takes precedence, so the
+same bundle is not initialized twice when OpenCode runs inside this repository.
 
 The project config selects `openai/gpt-5.6-luna`. No provider credential is
 stored in this repository.

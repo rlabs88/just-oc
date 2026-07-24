@@ -4,7 +4,7 @@ import type { AdapterResult } from "./types"
 
 const MAX_OUTPUT_CHARS = 40_000
 const MAX_REWRITE_CHARS = 8_192
-const MAX_METADATA_COMMAND_CHARS = 1_000
+const MAX_METADATA_COMMAND_CHARS = 200
 const REWRITE_TIMEOUT_MS = 2_000
 
 type RewriteStatus =

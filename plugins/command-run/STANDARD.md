@@ -21,6 +21,13 @@ tool surface. Each constituent command asks through its dedicated
 `command_run_<type>` permission. Progress uses tool metadata; final TUI toasts are
 best-effort compatibility notices and never replace the ordered result.
 
+The versioned `metadata.commandRun` trace is the authoritative progress
+transport. OpenCode 1.17.5 persists and emits that metadata, but its stock TUI
+and GUI generic tool renderers do not display custom metadata; the GUI also
+ignores generic tool output. TUI toasts are therefore bounded best-effort
+milestones, and their endpoint may succeed when no TUI is attached. This bundle
+does not claim renderer integration and does not patch or fork OpenCode.
+
 Steps are dependency barriers. Read-only work may overlap within a step;
 mutations remain exclusive. A failed, denied, or aborted command prevents later
 steps from launching. Paths remain inside the session directory after symlink
@@ -33,6 +40,11 @@ usable rewrite. `RTK_DISABLED=1` explicitly selects raw execution. Rewritten
 commands disable RTK telemetry and tee output, and keep any RTK database or tee
 state disabled through the null device. Compound or environment-mutating shell
 commands stay raw so command-local expansion cannot override those controls.
+
+Task status carries a broad task group, an ordered unique set of allowlisted
+manual types, a lifecycle status, and an optional bounded phase checkpoint. A
+legacy single manual value is normalized for transcript compatibility. Task
+status remains inert metadata and never grants permission or runtime authority.
 
 ## Exclusions
 

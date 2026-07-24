@@ -38,8 +38,11 @@ Every final agent prompt contains these sections in this exact order:
 5. Base Task Behavior
 6. Role Task Behavior
 
-Shared prompts are detailed, model-neutral host behavior. Role prompts narrow
-the baseline without overriding its security or truthfulness boundaries.
+Shared prompts are detailed, model-neutral host behavior. Role prompts normally
+narrow that baseline without overriding its security or truthfulness boundaries.
+Cortex owns a complete six-section profile because its execution and continuity
+contract is intentionally denser; the harness still composes the same ordered
+sections, while Flux and Zen continue to use the shared baselines.
 
 ## Typed role configuration
 
@@ -87,11 +90,12 @@ plugin does not install a parallel permission hook.
 
 Cortex continuity is reconstructed from OpenCode-owned session messages. A
 completed Command Run tool part may contribute one validated, bounded task
-checkpoint. The selected task type can inject one static allowlisted manual;
-checkpoint text never becomes system instruction. Compaction hooks append an
-operational handoff request and label model-authored checkpoint context as
-untrusted provenance. Live hook state is only an optimization over that
-transcript authority.
+checkpoint. The ordered, unique task-type set selects static allowlisted
+manuals; a legacy single task type is normalized during reconstruction.
+Checkpoint context is optional and never becomes system instruction. Compaction
+hooks append an operational handoff request and label model-authored checkpoint
+context as untrusted provenance. Live hook state is only an optimization over
+that transcript authority.
 
 ## Enablement
 

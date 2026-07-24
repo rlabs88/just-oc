@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises"
 import { join, relative } from "node:path"
-import type { ParsedCommand, AdapterResult, ExecutionClass, TaskCheckpoint } from "./types"
+import { TASK_TYPES, type ParsedCommand, type AdapterResult, type CommandPhase, type CommandTraceUpdate, type ExecutionClass, type TaskCheckpoint, type TaskType } from "./types"
 import { parseStrictObject, requireString } from "./parser"
 import { resolveWorkspacePath } from "./paths"
 import { executeReadMedia, parseMediaRequest } from "./media"
@@ -30,14 +30,16 @@ export async function executeAdapter(
   command: ParsedCommand,
   root: string,
   signal: AbortSignal,
-  webDependencies: WebDependencies = {}
+  webDependencies: WebDependencies = {},
+  updatePhase: (phase: CommandPhase, update?: CommandTraceUpdate) => void = () => {}
 ): Promise<AdapterResult> {
+  if (command.command_type !== "shell") updatePhase("running")
   switch (command.command_type) {
     case "read": return executeRead(command, root)
     case "glob": return executeGlob(command, root)
     case "grep": return executeGrep(command, root, signal)
     case "apply_patch": return executePatch(command, root, signal)
-    case "shell": return executeShell(command.command_line, root, signal)
+    case "shell": return executeShell(command.command_line, root, signal, {}, updatePhase)
     case "task_status": return executeTaskStatus(command)
     case "web_discover": return executeWebDiscover(command, root, signal, webDependencies)
     case "read_media": return executeReadMedia(command, root)
@@ -129,14 +131,14 @@ function executeTaskStatus(command: ParsedCommand): AdapterResult {
   if (status !== "doing" && status !== "question" && status !== "done") {
     throw new Error("status must be doing, question, or done")
   }
-  const taskType = parsed.task_type
-  if (!isTaskType(taskType)) throw new Error("task_type is not supported")
+  const taskType = parseTaskTypes(parsed.task_type)
+  const compactContext = optionalBoundedString(parsed.compact_context, "compact_context", 4_000)
   const checkpoint: TaskCheckpoint = {
     version: 1,
     task_group: boundedString(parsed.task_group, "task_group", 200),
     task_type: taskType,
     status,
-    compact_context: boundedString(parsed.compact_context, "compact_context", 4_000),
+    ...(compactContext ? { compact_context: compactContext } : {}),
   }
   return { output: JSON.stringify(checkpoint), metadata: { taskStatus: checkpoint } }
 }
@@ -147,13 +149,23 @@ function boundedString(value: unknown, field: string, maximum: number): string {
   return text
 }
 
-function isTaskType(value: unknown): value is TaskCheckpoint["task_type"] {
-  return value === "implementation"
-    || value === "debugging"
-    || value === "architecture"
-    || value === "review"
-    || value === "research"
-    || value === "visual_inspection"
+function optionalBoundedString(value: unknown, field: string, maximum: number): string | undefined {
+  if (value === undefined) return undefined
+  return boundedString(value, field, maximum)
+}
+
+function parseTaskTypes(value: unknown): readonly TaskType[] {
+  const values = typeof value === "string" ? [value] : value
+  if (!Array.isArray(values) || values.length === 0 || values.length > TASK_TYPES.length) {
+    throw new Error("task_type must contain unique supported values")
+  }
+  if (values.some((item) => typeof item !== "string" || !TASK_TYPES.includes(item as TaskType))) {
+    throw new Error("task_type must contain unique supported values")
+  }
+  if (new Set(values).size !== values.length) {
+    throw new Error("task_type must contain unique supported values")
+  }
+  return values as TaskType[]
 }
 
 function patchPaths(diff: string): string[] {

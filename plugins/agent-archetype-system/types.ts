@@ -27,9 +27,12 @@ export interface ModelSettings {
   readonly steps?: number
 }
 
-export interface PromptAdditions {
+export interface PromptProfile {
+  readonly baseIdentity?: string
   readonly identity: string
+  readonly sharedSecurity?: string
   readonly security: readonly string[]
+  readonly baseTask?: string
   readonly task: string
 }
 
@@ -46,7 +49,7 @@ export interface ArchetypeConfig {
   readonly nativeToolCatalog?: NativeToolCatalog
   readonly plugins: readonly IndependentPluginId[]
   readonly hooks: readonly ArchetypeHookId[]
-  readonly prompts: PromptAdditions
+  readonly prompts: PromptProfile
 }
 
 export type ArchetypeRegistry = Readonly<Record<RoleId, ArchetypeConfig>>
@@ -103,18 +106,26 @@ export interface HookRoute {
 
 export const TASK_TYPES = [
   "implementation",
+  "new_build",
   "debugging",
+  "refactoring",
   "architecture",
   "review",
   "research",
+  "data_research",
   "visual_inspection",
+  "frontend",
+  "website",
+  "interactive_3d",
+  "editorial",
+  "operations",
 ] as const
 export type TaskType = (typeof TASK_TYPES)[number]
 
 export interface TaskCheckpoint {
   readonly version: 1
   readonly task_group: string
-  readonly task_type: TaskType
+  readonly task_type: readonly TaskType[]
   readonly status: "doing" | "question" | "done"
-  readonly compact_context: string
+  readonly compact_context?: string
 }

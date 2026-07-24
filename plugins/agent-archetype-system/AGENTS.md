@@ -19,7 +19,9 @@ and SDK V2 types rather than memory or legacy spike code.
 
 - Preserve the exact six-section prompt order.
 - Preserve `mode: all` for every archetype and Cortex as the project default agent.
-- Keep shared prompts model-neutral and role objects declarative.
+- Keep shared prompts model-neutral and role objects declarative. A complete
+  role-owned profile must preserve the six-section contract and may not widen
+  host authority.
 - Keep executable logic flat at the plugin root.
 - Let OpenCode own sessions, tools, permissions, execution, and the agent loop.
 - Route hooks from host-provided role/session identity and guard every role-specific effect.

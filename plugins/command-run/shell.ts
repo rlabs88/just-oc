@@ -2,7 +2,7 @@ import type { AdapterResult } from "./types"
 
 const MAX_OUTPUT_CHARS = 40_000
 const MAX_REWRITE_CHARS = 8_192
-const MAX_METADATA_COMMAND_CHARS = 200
+const MAX_METADATA_COMMAND_JSON_CHARS = 200
 const REWRITE_TIMEOUT_MS = 2_000
 
 type RewriteStatus =
@@ -183,9 +183,17 @@ function shellMetadata(original: string, rewrite: RewriteDecision, exitCode?: nu
 }
 
 function boundedCommand(command: string): string {
-  if (command.length <= MAX_METADATA_COMMAND_CHARS) return command
+  if (JSON.stringify(command).length <= MAX_METADATA_COMMAND_JSON_CHARS) return command
   const marker = "… truncated"
-  return `${command.slice(0, MAX_METADATA_COMMAND_CHARS - marker.length)}${marker}`
+  let lower = 0
+  let upper = command.length
+  while (lower < upper) {
+    const candidate = Math.ceil((lower + upper) / 2)
+    const encodedLength = JSON.stringify(`${command.slice(0, candidate)}${marker}`).length
+    if (encodedLength <= MAX_METADATA_COMMAND_JSON_CHARS) lower = candidate
+    else upper = candidate - 1
+  }
+  return `${command.slice(0, lower)}${marker}`
 }
 
 async function collectProcess(

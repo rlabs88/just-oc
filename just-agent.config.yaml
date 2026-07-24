@@ -1,0 +1,15 @@
+# Project-local just-lib placement contract for OpenCode skills.
+harness:
+  opencode:
+    path: ~/.config/opencode
+    settings: ~/.config/opencode/opencode.json
+    layout:
+      skills_dir: ~/.config/opencode/skills
+      subagents_dir: ~/.config/opencode/agents
+      subagent_format: markdown
+      project_skills_dir: .opencode/skills
+      project_subagents_dir: .opencode/agents
+      settings_files:
+        - opencode.json
+        - oh-my-opencode.json
+        - settings.json

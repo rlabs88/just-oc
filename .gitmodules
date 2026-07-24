@@ -1,0 +1,3 @@
+[submodule "skill-bank/skills"]
+	path = skill-bank/skills
+	url = https://github.com/EugeneChan00/skills.git

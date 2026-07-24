@@ -1,5 +1,55 @@
 apiVersion: agent-toolkit/v1
 
+  - id: matt-pocock-skills
+    description: EugeneChan00 fork of Matt Pocock's skills library, vendored as a submodule for Linear-compliant local skill use
+    path: skill-bank/skills
+    skills:
+      - design-an-interface
+      - qa
+      - request-refactor-plan
+      - ubiquitous-language
+      - ask-matt
+      - code-review
+      - codebase-design
+      - diagnosing-bugs
+      - domain-modeling
+      - grill-with-docs
+      - implement
+      - improve-codebase-architecture
+      - prototype
+      - research
+      - resolving-merge-conflicts
+      - setup-matt-pocock-skills
+      - tdd
+      - to-spec
+      - to-tickets
+      - triage
+      - wayfinder
+      - batch-grill-me
+      - claude-handoff
+      - loop-me
+      - setup-ts-deep-modules
+      - to-questionnaire
+      - wizard
+      - writing-beats
+      - writing-fragments
+      - writing-shape
+      - git-guardrails-claude-code
+      - migrate-to-shoehorn
+      - scaffold-exercises
+      - setup-pre-commit
+      - edit-article
+      - obsidian-vault
+      - grill-me
+      - grilling
+      - handoff
+      - teach
+      - writing-great-skills
+    overrides:
+      scope: project
+      agents: [opencode]
+      gitnored: true
+
 osrc:
   - id: claude-code-system-prompts
     description: Extracted Claude Code prompt components used as a comparative design reference

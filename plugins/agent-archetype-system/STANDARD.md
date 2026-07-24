@@ -66,7 +66,10 @@ own project autoloaders and tool ownership. Archetypes select those stable
 plugin IDs as configuration metadata; the registry deduplicates the selection.
 The Agent Archetype System never copies their tools or autoloads a second
 instance. The pinned host does not apply the typed per-agent `tools` field, so
-the OpenCode permission map is the authoritative Cortex-only Command Run gate.
+the OpenCode permission map is the authoritative per-agent Command Run gate.
+Every enabled archetype selects Command Run and explicitly allows the parent
+tool plus each constituent permission; role prompts still decide how strongly
+an archetype prefers that shared capability.
 
 Cortex's validated compressed catalogue denies the native `read`, `glob`,
 `grep`, and `edit` permissions; `edit` is the host permission that controls the

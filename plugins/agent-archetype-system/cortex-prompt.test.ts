@@ -5,6 +5,7 @@ import { taskManuals } from "./prompts/manuals"
 import { archetypeRegistry } from "./registry"
 import { cortex } from "./roles/cortex"
 import { flux } from "./roles/flux"
+import { zen } from "./roles/zen"
 import { TASK_TYPES } from "./types"
 
 describe("Cortex prompt profile", () => {
@@ -33,11 +34,38 @@ describe("Cortex prompt profile", () => {
     expect(prompt).toContain("OpenCode owns the agent loop")
   })
 
+  test("prefers shell-first command_run batches without weakening edit safety", () => {
+    expect(prompt).toContain("Use command_run as the primary execution surface")
+    expect(prompt).toContain("Prefer bounded foreground shell commands")
+    expect(prompt).toContain("Use apply_patch for coordinated source edits")
+    expect(prompt).toContain("output-dependent work")
+  })
+
+  test("makes command_run and every constituent permission available to all archetypes", () => {
+    const permissionKeys = [
+      "command_run",
+      "command_run_read",
+      "command_run_glob",
+      "command_run_grep",
+      "command_run_apply_patch",
+      "command_run_shell",
+      "command_run_task_status",
+      "command_run_web_discover",
+      "command_run_read_media",
+    ] as const
+
+    for (const role of [cortex, flux, zen]) {
+      expect(role.plugins).toContain("command-run")
+      for (const key of permissionKeys) expect(role.permissions[key]).toBe("allow")
+    }
+  })
+
   test("does not leak Cortex-specific behavior into Flux", () => {
     const fluxPrompt = composePrompt(flux)
     expect("baseIdentity" in flux.prompts).toBeFalse()
     expect(fluxPrompt).not.toContain("prompt-to-artifact checklist")
     expect(fluxPrompt).not.toContain("before any write-producing operation")
+    expect(fluxPrompt).not.toContain("Use command_run as the primary execution surface")
   })
 
   test("provides one static manual for every allowlisted task type", () => {

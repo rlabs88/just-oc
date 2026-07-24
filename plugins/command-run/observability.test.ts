@@ -11,6 +11,17 @@ import { createTraceRecorder } from "./trace"
 import type { CommandRunTrace, ParsedCommand } from "./types"
 
 describe("command_run observability", () => {
+  test("requires a bounded primitive child inventory for stock generic clients", () => {
+    const definition = createCommandRunTool({} as never)
+    const description = definition.args.description as unknown as {
+      safeParse(input: unknown): { success: boolean }
+    }
+
+    expect(description.safeParse("#0 step 1 read: package.json; #1 step 1 glob: plugins/**/*.ts").success).toBe(true)
+    expect(description.safeParse("").success).toBe(false)
+    expect(description.safeParse("x".repeat(4_001)).success).toBe(false)
+  })
+
   test("applies a bounded default execution timeout and rejects invalid bounds", () => {
     const [command] = parseCommands([{ command_type: "shell", command_line: "printf ok", step: 1 }])
     expect(command.timeout_ms).toBe(120_000)

@@ -24,9 +24,14 @@ best-effort compatibility notices and never replace the ordered result.
 The versioned `metadata.commandRun` trace is the authoritative progress
 transport. OpenCode 1.17.5 persists and emits that metadata, but its stock TUI
 and GUI generic tool renderers do not display custom metadata; the GUI also
-ignores generic tool output. TUI toasts are therefore bounded best-effort
-milestones, and their endpoint may succeed when no TUI is attached. This bundle
-does not claim renderer integration and does not patch or fork OpenCode.
+ignores generic tool output. The required primitive `description` input carries
+a readable one-line inventory of every submitted child, grouped by dependency
+step, because both stock generic renderers expose that field on the parent tool
+row. It is a presentation hint, not authority; the structured commands and
+final trace remain authoritative.
+TUI toasts are bounded best-effort milestones, and their endpoint may succeed
+when no TUI is attached. This bundle does not claim custom renderer integration
+and does not patch or fork OpenCode.
 
 Steps are dependency barriers. Read-only work may overlap within a step;
 mutations remain exclusive. A failed, denied, or aborted command prevents later

@@ -26,6 +26,13 @@ mutations remain exclusive. A failed, denied, or aborted command prevents later
 steps from launching. Paths remain inside the session directory after symlink
 resolution, process output is bounded, and shell children are cancellable.
 
+Shell permissions always evaluate the original command. After approval, RTK may
+optionally rewrite that command for semantic output reduction; the bundle owns
+no rewrite rules and fails open to raw execution when RTK cannot provide a
+usable rewrite. `RTK_DISABLED=1` explicitly selects raw execution. Rewritten
+commands disable RTK telemetry and tee output, and keep any RTK database or tee
+state in an ephemeral worktree-local directory that is removed after execution.
+
 ## Exclusions
 
 The bundle does not dispatch native OpenCode tools, patch OpenCode, store session

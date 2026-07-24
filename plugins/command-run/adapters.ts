@@ -5,6 +5,7 @@ import { parseStrictObject, requireString } from "./parser"
 import { resolveWorkspacePath } from "./paths"
 import { executeReadMedia, parseMediaRequest } from "./media"
 import { executeWebDiscover, parseWebRequest, validateWebPermission, type WebDependencies } from "./web"
+import { executeShell } from "./shell"
 
 const MAX_READ_CHARS = 40_000
 const MAX_MATCHES = 200
@@ -36,7 +37,7 @@ export async function executeAdapter(
     case "glob": return executeGlob(command, root)
     case "grep": return executeGrep(command, root, signal)
     case "apply_patch": return executePatch(command, root, signal)
-    case "shell": return executeShell(command, root, signal)
+    case "shell": return executeShell(command.command_line, root, signal)
     case "task_status": return executeTaskStatus(command)
     case "web_discover": return executeWebDiscover(command, root, signal, webDependencies)
     case "read_media": return executeReadMedia(command, root)
@@ -120,16 +121,6 @@ async function executePatch(command: ParsedCommand, root: string, signal: AbortS
   const applied = await collectProcess(apply, signal)
   if (applied.exitCode !== 0) throw new Error(applied.stderr || "patch application failed")
   return { output: `Applied patch to ${paths.length} path(s).`, metadata: { paths } }
-}
-
-async function executeShell(command: ParsedCommand, root: string, signal: AbortSignal): Promise<AdapterResult> {
-  if (/(^|[^&])&($|[^&])|\b(?:nohup|disown)\b/.test(command.command_line)) {
-    throw new Error("background shell execution is not supported")
-  }
-  const process = Bun.spawn(["/bin/sh", "-lc", command.command_line], { cwd: root, stdout: "pipe", stderr: "pipe" })
-  const result = await collectProcess(process, signal)
-  if (result.exitCode !== 0) throw new Error(result.stderr || `shell exited ${result.exitCode}`)
-  return { output: result.stdout || result.stderr || "Command completed.", metadata: { exitCode: result.exitCode } }
 }
 
 function executeTaskStatus(command: ParsedCommand): AdapterResult {

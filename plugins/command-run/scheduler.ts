@@ -96,7 +96,7 @@ async function runOne(
   } catch (error) {
     if (dependencies.signal.aborted || isAbort(error)) return cancelledResult(command)
     const status = isDenied(error) ? "denied" : "failed"
-    return makeResult(command, status, boundOutput(errorMessage(error), dependencies.maxOutputChars))
+    return makeResult(command, status, boundOutput(errorMessage(error), dependencies.maxOutputChars), errorMetadata(error))
   }
 }
 
@@ -184,6 +184,14 @@ function boundOutput(output: string, maximum: number): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+function errorMetadata(error: unknown): Record<string, unknown> {
+  if (!(error instanceof Error) || !("metadata" in error)) return {}
+  const metadata = error.metadata
+  return typeof metadata === "object" && metadata !== null && !Array.isArray(metadata)
+    ? metadata as Record<string, unknown>
+    : {}
 }
 
 function isDenied(error: unknown): boolean {

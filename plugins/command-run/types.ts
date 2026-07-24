@@ -14,10 +14,14 @@ export type CommandInput = {
   command_type: CommandType
   command_line: string
   step: number
+  timeout_ms?: number
 }
 
-export type ParsedCommand = CommandInput & { inputIndex: number }
-export type CommandStatus = "completed" | "failed" | "denied" | "cancelled"
+export type ParsedCommand = Omit<CommandInput, "timeout_ms"> & {
+  inputIndex: number
+  timeout_ms?: number
+}
+export type CommandStatus = "completed" | "failed" | "denied" | "cancelled" | "timed_out"
 export type CommandResult = {
   command_type: CommandType
   inputIndex: number
@@ -28,15 +32,65 @@ export type CommandResult = {
   attachments?: CommandAttachment[]
 }
 
-export type CommandProgress = {
+export const COMMAND_PHASES = [
+  "queued",
+  "permission",
+  "rewriting",
+  "running",
+  "completed",
+  "failed",
+  "denied",
+  "cancelled",
+  "timed_out",
+] as const
+
+export type CommandPhase = (typeof COMMAND_PHASES)[number]
+export type CommandTerminalStatus = Extract<
+  CommandPhase,
+  "completed" | "failed" | "denied" | "cancelled" | "timed_out"
+>
+export type CommandTraceUpdate = {
+  originalCommand?: string
+  executedCommand?: string
+  rewriteStatus?: string
+  exitCode?: number
+  stdoutChars?: number
+  stderrChars?: number
+  stdoutTruncated?: boolean
+  stderrTruncated?: boolean
+  resultPreview?: string
+}
+export type CommandTraceRecord = {
+  version: 1
+  inputIndex: number
   step: number
-  activeIndex?: number
-  activeType?: CommandType
-  total: number
-  completed: number
-  failed: number
-  denied: number
-  cancelled: number
+  commandType: CommandType
+  commandLine: string
+  phase: CommandPhase
+  timestamps: Partial<Record<CommandPhase, number>>
+  durationMs: number
+  originalCommand?: string
+  executedCommand?: string
+  rewriteStatus?: string
+  exitCode?: number
+  stdoutChars: number
+  stderrChars: number
+  stdoutTruncated: boolean
+  stderrTruncated: boolean
+  resultPreview?: string
+  terminalStatus?: CommandTerminalStatus
+}
+export type CommandRunTrace = {
+  version: 1
+  records: CommandTraceRecord[]
+  summary: {
+    total: number
+    completed: number
+    failed: number
+    denied: number
+    cancelled: number
+    timedOut: number
+  }
 }
 
 export type AdapterResult = {

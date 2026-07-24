@@ -1,7 +1,10 @@
+import { createTraceRecorder } from "./trace"
 import type {
   AdapterResult,
-  CommandProgress,
+  CommandPhase,
   CommandResult,
+  CommandRunTrace,
+  CommandTraceUpdate,
   ParsedCommand,
   ExecutionClass,
 } from "./types"
@@ -9,9 +12,14 @@ import type {
 type ScheduleDependencies = {
   signal: AbortSignal
   ask(command: ParsedCommand): Promise<void>
-  execute(command: ParsedCommand): Promise<AdapterResult>
+  execute(
+    command: ParsedCommand,
+    signal: AbortSignal,
+    updatePhase: (phase: CommandPhase, update?: CommandTraceUpdate) => void
+  ): Promise<AdapterResult>
   executionClass?(command: ParsedCommand): ExecutionClass
-  onProgress(progress: CommandProgress): void
+  onTrace?(trace: CommandRunTrace): void
+  now?(): number
   maxOutputChars: number
   maxAttachments?: number
   maxAttachmentBytes?: number
@@ -22,34 +30,31 @@ export async function runCommandSchedule(
   dependencies: ScheduleDependencies
 ): Promise<CommandResult[]> {
   const ordered = [...commands].sort((left, right) => left.step - right.step || left.inputIndex - right.inputIndex)
+  const trace = createTraceRecorder(ordered, dependencies.onTrace ?? (() => {}), dependencies.now)
   const results = new Map<number, CommandResult>()
   const attachmentBudget = { count: 0, bytes: 0 }
   const steps = [...new Set(ordered.map((command) => command.step))]
   let stopAfterStep = false
 
-  emitProgress(results, ordered.length, steps[0] ?? 1, dependencies)
   for (const step of steps) {
     const current = ordered.filter((command) => command.step === step)
     if (stopAfterStep || dependencies.signal.aborted) {
-      for (const command of current) results.set(command.inputIndex, cancelledResult(command))
-      emitProgress(results, ordered.length, step, dependencies)
+      for (const command of current) setCancelled(command, results, trace, "Cancelled because an earlier step did not complete.")
       continue
     }
 
     for (let index = 0; index < current.length;) {
       const command = current[index]
       if (classFor(command, dependencies) !== "parallel-read") {
-        const result = await runOne(command, dependencies, ordered.length, results, attachmentBudget)
+        const result = await runOne(command, dependencies, attachmentBudget, trace)
         results.set(command.inputIndex, result)
         stopAfterStep ||= result.status !== "completed"
         index += 1
-        emitProgress(results, ordered.length, step, dependencies)
         if (result.status !== "completed") {
           for (const later of current.slice(index)) {
-            results.set(later.inputIndex, cancelledResult(later))
+            setCancelled(later, results, trace, "Cancelled because an earlier command did not complete.")
           }
           index = current.length
-          emitProgress(results, ordered.length, step, dependencies)
         }
         continue
       }
@@ -60,15 +65,15 @@ export async function runCommandSchedule(
         index += 1
       }
       const batchResults = await Promise.all(
-        readBatch.map((item) => runOne(item, dependencies, ordered.length, results, attachmentBudget))
+        readBatch.map((item) => runOne(item, dependencies, attachmentBudget, trace))
       )
       batchResults.forEach((result) => results.set(result.inputIndex, result))
       const batchFailed = batchResults.some((result) => result.status !== "completed")
       stopAfterStep ||= batchFailed
-      emitProgress(results, ordered.length, step, dependencies)
       if (batchFailed) {
-        for (const later of current.slice(index)) results.set(later.inputIndex, cancelledResult(later))
-        emitProgress(results, ordered.length, step, dependencies)
+        for (const later of current.slice(index)) {
+          setCancelled(later, results, trace, "Cancelled because an earlier command did not complete.")
+        }
         break
       }
     }
@@ -80,24 +85,121 @@ export async function runCommandSchedule(
 async function runOne(
   command: ParsedCommand,
   dependencies: ScheduleDependencies,
-  total: number,
-  completedResults: Map<number, CommandResult>,
-  attachmentBudget: { count: number; bytes: number }
+  attachmentBudget: { count: number; bytes: number },
+  trace: ReturnType<typeof createTraceRecorder>
 ): Promise<CommandResult> {
-  if (dependencies.signal.aborted) return cancelledResult(command)
-  dependencies.onProgress(progressForActive(command, total, completedResults))
-  try {
-    await dependencies.ask(command)
-    if (dependencies.signal.aborted) return cancelledResult(command)
-    const result = await dependencies.execute(command)
-    if (dependencies.signal.aborted) return cancelledResult(command)
-    reserveAttachments(result, attachmentBudget, dependencies)
-    return makeResult(command, "completed", boundOutput(result.output, dependencies.maxOutputChars), result.metadata, result.attachments)
-  } catch (error) {
-    if (dependencies.signal.aborted || isAbort(error)) return cancelledResult(command)
-    const status = isDenied(error) ? "denied" : "failed"
-    return makeResult(command, status, boundOutput(errorMessage(error), dependencies.maxOutputChars), errorMetadata(error))
+  if (dependencies.signal.aborted) {
+    trace.transition(command.inputIndex, "cancelled", { resultPreview: "Session cancelled." })
+    return cancelledResult(command)
   }
+
+  const executionTimeout = new AbortController()
+  const combinedSignal = AbortSignal.any([dependencies.signal, executionTimeout.signal])
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined
+  let running = false
+  const updatePhase = (phase: CommandPhase, update?: CommandTraceUpdate): void => {
+    if (phase === "running" && !running) {
+      running = true
+      timeoutHandle = setTimeout(
+        () => executionTimeout.abort(new DOMException("Command execution timed out", "TimeoutError")),
+        command.timeout_ms
+      )
+    }
+    trace.transition(command.inputIndex, phase, update)
+  }
+
+  try {
+    updatePhase("permission")
+    await dependencies.ask(command)
+    if (dependencies.signal.aborted) return terminalResult(command, "cancelled", "Session cancelled.", trace)
+    const result = await dependencies.execute(command, combinedSignal, updatePhase)
+    if (executionTimeout.signal.aborted) return terminalResult(command, "timed_out", "Command execution timed out.", trace)
+    if (dependencies.signal.aborted) return terminalResult(command, "cancelled", "Session cancelled.", trace)
+    reserveAttachments(result, attachmentBudget, dependencies)
+    const output = boundOutput(result.output, dependencies.maxOutputChars)
+    const diagnostics = successDiagnostics(result, output, dependencies.maxOutputChars)
+    trace.transition(command.inputIndex, "completed", diagnostics)
+    return makeResult(command, "completed", output, result.metadata, result.attachments)
+  } catch (error) {
+    if (executionTimeout.signal.aborted && !dependencies.signal.aborted) {
+      return terminalResult(command, "timed_out", "Command execution timed out.", trace, errorMetadata(error))
+    }
+    if (dependencies.signal.aborted || isAbort(error)) {
+      return terminalResult(command, "cancelled", "Session cancelled.", trace, errorMetadata(error))
+    }
+    const status = isDenied(error) ? "denied" : "failed"
+    const message = boundOutput(errorMessage(error), dependencies.maxOutputChars)
+    const metadata = errorMetadata(error)
+    trace.transition(command.inputIndex, status, failureDiagnostics(message, metadata))
+    return makeResult(command, status, message, metadata)
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle)
+  }
+}
+
+function terminalResult(
+  command: ParsedCommand,
+  status: "cancelled" | "timed_out",
+  message: string,
+  trace: ReturnType<typeof createTraceRecorder>,
+  metadata: Record<string, unknown> = {}
+): CommandResult {
+  trace.transition(command.inputIndex, status, failureDiagnostics(message, metadata))
+  return makeResult(command, status, message, metadata)
+}
+
+function setCancelled(
+  command: ParsedCommand,
+  results: Map<number, CommandResult>,
+  trace: ReturnType<typeof createTraceRecorder>,
+  message: string
+): void {
+  trace.transition(command.inputIndex, "cancelled", { resultPreview: message })
+  results.set(command.inputIndex, cancelledResult(command, message))
+}
+
+function successDiagnostics(
+  result: AdapterResult,
+  output: string,
+  maximum: number
+): CommandTraceUpdate {
+  const metadata = result.metadata ?? {}
+  return {
+    ...recognizedDiagnostics(metadata),
+    stdoutChars: numberMetadata(metadata.stdoutChars) ?? result.output.length,
+    stderrChars: numberMetadata(metadata.stderrChars) ?? 0,
+    stdoutTruncated: booleanMetadata(metadata.stdoutTruncated) ?? result.output.length > maximum,
+    stderrTruncated: booleanMetadata(metadata.stderrTruncated) ?? false,
+    resultPreview: output,
+  }
+}
+
+function failureDiagnostics(message: string, metadata: Record<string, unknown>): CommandTraceUpdate {
+  return {
+    ...recognizedDiagnostics(metadata),
+    stdoutChars: numberMetadata(metadata.stdoutChars) ?? 0,
+    stderrChars: numberMetadata(metadata.stderrChars) ?? message.length,
+    stdoutTruncated: booleanMetadata(metadata.stdoutTruncated) ?? false,
+    stderrTruncated: booleanMetadata(metadata.stderrTruncated) ?? false,
+    resultPreview: message,
+  }
+}
+
+function recognizedDiagnostics(metadata: Record<string, unknown>): CommandTraceUpdate {
+  return {
+    ...(typeof metadata.originalCommand === "string" ? { originalCommand: metadata.originalCommand } : {}),
+    ...(typeof metadata.executedCommand === "string" ? { executedCommand: metadata.executedCommand } : {}),
+    ...(typeof metadata.rewriteStatus === "string" ? { rewriteStatus: metadata.rewriteStatus } : {}),
+    ...(numberMetadata(metadata.exitCode) === undefined ? {} : { exitCode: numberMetadata(metadata.exitCode) }),
+  }
+}
+
+function numberMetadata(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined
+}
+
+function booleanMetadata(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined
 }
 
 function reserveAttachments(
@@ -118,45 +220,6 @@ function reserveAttachments(
   budget.bytes = nextBytes
 }
 
-function progressForActive(
-  command: ParsedCommand,
-  total: number,
-  completedResults: Map<number, CommandResult>
-): CommandProgress {
-  const values = [...completedResults.values()]
-  return {
-    step: command.step,
-    activeIndex: command.inputIndex,
-    activeType: command.command_type,
-    total,
-    completed: count(values, "completed"),
-    failed: count(values, "failed"),
-    denied: count(values, "denied"),
-    cancelled: count(values, "cancelled"),
-  }
-}
-
-function emitProgress(
-  results: Map<number, CommandResult>,
-  total: number,
-  step: number,
-  dependencies: ScheduleDependencies
-): void {
-  const values = [...results.values()]
-  dependencies.onProgress({
-    step,
-    total,
-    completed: count(values, "completed"),
-    failed: count(values, "failed"),
-    denied: count(values, "denied"),
-    cancelled: count(values, "cancelled"),
-  })
-}
-
-function count(results: readonly CommandResult[], status: CommandResult["status"]): number {
-  return results.filter((result) => result.status === status).length
-}
-
 function makeResult(
   command: ParsedCommand,
   status: CommandResult["status"],
@@ -164,7 +227,15 @@ function makeResult(
   metadata: Record<string, unknown> = {},
   attachments?: AdapterResult["attachments"]
 ): CommandResult {
-  return { command_type: command.command_type, inputIndex: command.inputIndex, step: command.step, status, output, metadata, ...(attachments?.length ? { attachments } : {}) }
+  return {
+    command_type: command.command_type,
+    inputIndex: command.inputIndex,
+    step: command.step,
+    status,
+    output,
+    metadata,
+    ...(attachments?.length ? { attachments } : {}),
+  }
 }
 
 function classFor(command: ParsedCommand, dependencies: ScheduleDependencies): ExecutionClass {
@@ -172,8 +243,8 @@ function classFor(command: ParsedCommand, dependencies: ScheduleDependencies): E
     ?? (command.command_type === "read" || command.command_type === "glob" || command.command_type === "grep" || command.command_type === "task_status" ? "parallel-read" : "mutation")
 }
 
-function cancelledResult(command: ParsedCommand): CommandResult {
-  return makeResult(command, "cancelled", "Cancelled because an earlier step did not complete.")
+function cancelledResult(command: ParsedCommand, message = "Cancelled because an earlier step did not complete."): CommandResult {
+  return makeResult(command, "cancelled", message)
 }
 
 function boundOutput(output: string, maximum: number): string {

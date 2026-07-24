@@ -1,6 +1,7 @@
 import { COMMAND_TYPES, type CommandInput, type ParsedCommand } from "./types"
 
-const COMMAND_KEYS = new Set(["command_type", "command_line", "step"])
+const COMMAND_KEYS = new Set(["command_type", "command_line", "step", "timeout_ms"])
+const DEFAULT_TIMEOUT_MS = 120_000
 
 export function parseCommands(value: unknown): ParsedCommand[] {
   if (!Array.isArray(value) || value.length < 1 || value.length > 20) {
@@ -23,7 +24,18 @@ function parseCommand(value: unknown, inputIndex: number): ParsedCommand {
   if (!Number.isInteger(value.step) || (value.step as number) < 1) {
     throw new Error(`commands[${inputIndex}].step must be a positive integer`)
   }
-  return { ...(value as CommandInput), inputIndex }
+  if (value.timeout_ms !== undefined && (
+    !Number.isInteger(value.timeout_ms)
+    || (value.timeout_ms as number) < 100
+    || (value.timeout_ms as number) > 300_000
+  )) {
+    throw new Error("timeout_ms must be an integer between 100 and 300000")
+  }
+  return {
+    ...(value as CommandInput),
+    inputIndex,
+    timeout_ms: (value.timeout_ms as number | undefined) ?? DEFAULT_TIMEOUT_MS,
+  }
 }
 
 export function parseStrictObject(

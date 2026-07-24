@@ -8,6 +8,7 @@ function taskStatus(commandLine: string): ParsedCommand {
     command_line: commandLine,
     step: 1,
     inputIndex: 0,
+    timeout_ms: 1_000,
   }
 }
 

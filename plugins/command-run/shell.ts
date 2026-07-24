@@ -1,4 +1,4 @@
-import type { AdapterResult } from "./types"
+import type { AdapterResult, CommandPhase, CommandTraceUpdate } from "./types"
 
 const MAX_OUTPUT_CHARS = 40_000
 const MAX_REWRITE_CHARS = 8_192
@@ -36,6 +36,8 @@ type ProcessResult = {
   exitCode: number
   stdoutTruncated: boolean
   stderrTruncated: boolean
+  stdoutChars: number
+  stderrChars: number
 }
 
 type ShellMetadata = {
@@ -43,6 +45,10 @@ type ShellMetadata = {
   executedCommand: string
   rewriteStatus: RewriteStatus
   exitCode?: number
+  stdoutChars?: number
+  stderrChars?: number
+  stdoutTruncated?: boolean
+  stderrTruncated?: boolean
 }
 
 class ShellExecutionError extends Error {
@@ -52,16 +58,32 @@ class ShellExecutionError extends Error {
   }
 }
 
+class ShellAbortError extends Error {
+  constructor(readonly metadata: ShellMetadata) {
+    super("Command aborted")
+    this.name = "AbortError"
+  }
+}
+
+class ProcessAbortError extends Error {
+  constructor(readonly result: ProcessResult) {
+    super("Command aborted")
+    this.name = "AbortError"
+  }
+}
+
 export async function executeShell(
   originalCommand: string,
   root: string,
   signal: AbortSignal,
-  dependencies: ShellDependencies = {}
+  dependencies: ShellDependencies = {},
+  updatePhase: (phase: CommandPhase, update?: CommandTraceUpdate) => void = () => {}
 ): Promise<AdapterResult> {
   assertForeground(originalCommand)
   if (invokesRtk(originalCommand) && !isRewriteEligible(originalCommand)) {
     throw new Error("compound or environment-mutating RTK commands are not supported")
   }
+  updatePhase("rewriting", { originalCommand })
   const rewrite = await rewriteCommand(originalCommand, root, signal, dependencies)
   if (signal.aborted) throw abortError()
 
@@ -76,9 +98,15 @@ export async function executeShell(
       env: environment,
       stdout: "pipe",
       stderr: "pipe",
+      detached: true,
+    })
+    updatePhase("running", {
+      originalCommand,
+      executedCommand: rewrite.command,
+      rewriteStatus: rewrite.status,
     })
     const result = await collectProcess(process, signal, MAX_OUTPUT_CHARS)
-    const metadata = shellMetadata(originalCommand, rewrite, result.exitCode)
+    const metadata = shellMetadata(originalCommand, rewrite, result)
     if (result.exitCode !== 0) {
       throw new ShellExecutionError(result.stderr || result.stdout || `shell exited ${result.exitCode}`, metadata)
     }
@@ -87,7 +115,12 @@ export async function executeShell(
       metadata,
     }
   } catch (error) {
-    if (signal.aborted) throw abortError()
+    if (signal.aborted) {
+      if (error instanceof ProcessAbortError) {
+        throw new ShellAbortError(shellMetadata(originalCommand, rewrite, error.result))
+      }
+      throw abortError()
+    }
     if (error instanceof ShellExecutionError) throw error
     throw new ShellExecutionError(errorMessage(error), shellMetadata(originalCommand, rewrite))
   }
@@ -115,6 +148,7 @@ async function rewriteCommand(
       }),
       stdout: "pipe",
       stderr: "pipe",
+      detached: true,
     })
     const result = await collectProcess(process, AbortSignal.any([signal, timeout.signal]), MAX_REWRITE_CHARS)
     if (result.stdoutTruncated || result.stderrTruncated) return { command, status: "failed" }
@@ -173,12 +207,18 @@ function isolatedRtkEnvironment(
   }
 }
 
-function shellMetadata(original: string, rewrite: RewriteDecision, exitCode?: number): ShellMetadata {
+function shellMetadata(original: string, rewrite: RewriteDecision, result?: ProcessResult): ShellMetadata {
   return {
     originalCommand: boundedCommand(original),
     executedCommand: boundedCommand(rewrite.command),
     rewriteStatus: rewrite.status,
-    ...(exitCode === undefined ? {} : { exitCode }),
+    ...(result === undefined ? {} : {
+      exitCode: result.exitCode,
+      stdoutChars: result.stdoutChars,
+      stderrChars: result.stderrChars,
+      stdoutTruncated: result.stdoutTruncated,
+      stderrTruncated: result.stderrTruncated,
+    }),
   }
 }
 
@@ -201,16 +241,20 @@ async function collectProcess(
     stdout: ReadableStream<Uint8Array>
     stderr: ReadableStream<Uint8Array>
     exited: Promise<number>
-    kill(): void
+    pid: number
+    kill(signal?: NodeJS.Signals): void
   },
   signal: AbortSignal,
   maximum: number
 ): Promise<ProcessResult> {
   if (signal.aborted) {
-    process.kill()
+    await terminateProcessTree(process)
     throw abortError()
   }
-  const abort = () => process.kill()
+  let termination: Promise<void> | undefined
+  const abort = () => {
+    termination ??= terminateProcessTree(process)
+  }
   signal.addEventListener("abort", abort, { once: true })
   try {
     const [stdout, stderr, exitCode] = await Promise.all([
@@ -218,38 +262,69 @@ async function collectProcess(
       readBoundedStream(process.stderr, maximum),
       process.exited,
     ])
-    if (signal.aborted) throw abortError()
-    return {
+    const result = {
       stdout: stdout.output,
       stderr: stderr.output,
       exitCode,
       stdoutTruncated: stdout.truncated,
       stderrTruncated: stderr.truncated,
+      stdoutChars: stdout.characters,
+      stderrChars: stderr.characters,
     }
+    if (signal.aborted) throw new ProcessAbortError(result)
+    return result
   } finally {
     signal.removeEventListener("abort", abort)
+    if (termination) await termination
+  }
+}
+
+async function terminateProcessTree(
+  processHandle: { pid: number; kill(signal?: NodeJS.Signals): void }
+): Promise<void> {
+  signalProcessTree(processHandle, "SIGTERM")
+  await Bun.sleep(250)
+  signalProcessTree(processHandle, "SIGKILL")
+}
+
+function signalProcessTree(
+  processHandle: { pid: number; kill(signal?: NodeJS.Signals): void },
+  signal: NodeJS.Signals
+): void {
+  try {
+    if (processHandle.pid > 0) globalThis.process.kill(-processHandle.pid, signal)
+    else processHandle.kill(signal)
+  } catch {
+    try {
+      processHandle.kill(signal)
+    } catch {
+      // The process already exited between the abort and cleanup attempts.
+    }
   }
 }
 
 async function readBoundedStream(
   stream: ReadableStream<Uint8Array>,
   maximum: number
-): Promise<{ output: string; truncated: boolean }> {
+): Promise<{ output: string; truncated: boolean; characters: number }> {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
   let output = ""
   let truncated = false
+  let characters = 0
   while (true) {
     const chunk = await reader.read()
     if (chunk.done) break
     const decoded = decoder.decode(chunk.value, { stream: true })
+    characters += decoded.length
     if (output.length + decoded.length > maximum) truncated = true
     if (output.length < maximum) output += decoded.slice(0, maximum - output.length)
   }
   const tail = decoder.decode()
+  characters += tail.length
   if (output.length + tail.length > maximum) truncated = true
   if (output.length < maximum) output += tail.slice(0, maximum - output.length)
-  return { output, truncated }
+  return { output, truncated, characters }
 }
 
 function isMissingExecutable(error: unknown): boolean {

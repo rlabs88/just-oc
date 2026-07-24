@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises"
 import { join, relative } from "node:path"
-import { TASK_TYPES, type ParsedCommand, type AdapterResult, type ExecutionClass, type TaskCheckpoint, type TaskType } from "./types"
+import { TASK_TYPES, type ParsedCommand, type AdapterResult, type CommandPhase, type CommandTraceUpdate, type ExecutionClass, type TaskCheckpoint, type TaskType } from "./types"
 import { parseStrictObject, requireString } from "./parser"
 import { resolveWorkspacePath } from "./paths"
 import { executeReadMedia, parseMediaRequest } from "./media"
@@ -30,14 +30,16 @@ export async function executeAdapter(
   command: ParsedCommand,
   root: string,
   signal: AbortSignal,
-  webDependencies: WebDependencies = {}
+  webDependencies: WebDependencies = {},
+  updatePhase: (phase: CommandPhase, update?: CommandTraceUpdate) => void = () => {}
 ): Promise<AdapterResult> {
+  if (command.command_type !== "shell") updatePhase("running")
   switch (command.command_type) {
     case "read": return executeRead(command, root)
     case "glob": return executeGlob(command, root)
     case "grep": return executeGrep(command, root, signal)
     case "apply_patch": return executePatch(command, root, signal)
-    case "shell": return executeShell(command.command_line, root, signal)
+    case "shell": return executeShell(command.command_line, root, signal, {}, updatePhase)
     case "task_status": return executeTaskStatus(command)
     case "web_discover": return executeWebDiscover(command, root, signal, webDependencies)
     case "read_media": return executeReadMedia(command, root)

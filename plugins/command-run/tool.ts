@@ -6,10 +6,11 @@ import { runCommandSchedule } from "./scheduler"
 import { COMMAND_TYPES, type CommandInput, type CommandProgress, type TaskCheckpoint } from "./types"
 
 const MAX_RESULT_CHARS = 20_000
+const COMMAND_GRAMMAR = `Run 1–20 permission-gated commands behind positive-integer dependency steps. Commands in a later step wait for every command in earlier steps. command_line grammar by type: read JSON {"path":string,"offset"?:integer,"limit"?:integer}; glob JSON {"pattern":string,"path"?:string}; grep JSON {"pattern":string,"path"?:string,"include"?:string}; apply_patch raw unified diff; shell raw foreground shell command; task_status JSON {"task_group":string,"task_type":"implementation"|"debugging"|"architecture"|"review"|"research"|"visual_inspection","status":"doing"|"question"|"done","compact_context":string}.`
 
 export function createCommandRunTool(client: PluginInput["client"]): ToolDefinition {
   return tool({
-    description: "Run 1–20 permission-gated local commands with dependency-step barriers and ordered results.",
+    description: COMMAND_GRAMMAR,
     args: {
       commands: tool.schema.array(tool.schema.object({
         command_type: tool.schema.enum(COMMAND_TYPES),

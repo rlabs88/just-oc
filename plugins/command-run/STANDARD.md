@@ -31,7 +31,8 @@ optionally rewrite that command for semantic output reduction; the bundle owns
 no rewrite rules and fails open to raw execution when RTK cannot provide a
 usable rewrite. `RTK_DISABLED=1` explicitly selects raw execution. Rewritten
 commands disable RTK telemetry and tee output, and keep any RTK database or tee
-state in an ephemeral worktree-local directory that is removed after execution.
+state disabled through the null device. Compound or environment-mutating shell
+commands stay raw so command-local expansion cannot override those controls.
 
 ## Exclusions
 

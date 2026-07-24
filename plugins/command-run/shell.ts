@@ -1,5 +1,3 @@
-import { mkdtemp, rm } from "node:fs/promises"
-import { join } from "node:path"
 import type { AdapterResult } from "./types"
 
 const MAX_OUTPUT_CHARS = 40_000
@@ -12,6 +10,7 @@ type RewriteStatus =
   | "rewritten-ask"
   | "disabled"
   | "already-rtk"
+  | "ineligible"
   | "unavailable"
   | "unchanged"
   | "exit-1"
@@ -60,15 +59,14 @@ export async function executeShell(
   dependencies: ShellDependencies = {}
 ): Promise<AdapterResult> {
   assertForeground(originalCommand)
-  assertNoRtkEnvironmentOverride(originalCommand)
+  if (invokesRtk(originalCommand) && !isRewriteEligible(originalCommand)) {
+    throw new Error("compound or environment-mutating RTK commands are not supported")
+  }
   const rewrite = await rewriteCommand(originalCommand, root, signal, dependencies)
   if (signal.aborted) throw abortError()
 
-  const runtime = invokesRtk(rewrite.command)
-    ? await mkdtemp(join(root, ".rtk-runtime-"))
-    : undefined
-  const environment = runtime
-    ? isolatedRtkEnvironment(dependencies.environment ?? process.env, runtime)
+  const environment = invokesRtk(rewrite.command)
+    ? isolatedRtkEnvironment(dependencies.environment ?? process.env)
     : dependencies.environment
 
   try {
@@ -92,8 +90,6 @@ export async function executeShell(
     if (signal.aborted) throw abortError()
     if (error instanceof ShellExecutionError) throw error
     throw new ShellExecutionError(errorMessage(error), shellMetadata(originalCommand, rewrite))
-  } finally {
-    if (runtime) await rm(runtime, { recursive: true, force: true })
   }
 }
 
@@ -105,6 +101,7 @@ async function rewriteCommand(
 ): Promise<RewriteDecision> {
   if (hasRtkDisabled(command)) return { command, status: "disabled" }
   if (invokesRtk(command)) return { command, status: "already-rtk" }
+  if (!isRewriteEligible(command)) return { command, status: "ineligible" }
   if (signal.aborted) throw abortError()
 
   const timeout = new AbortController()
@@ -112,12 +109,10 @@ async function rewriteCommand(
   try {
     const process = Bun.spawn([dependencies.rtkExecutable ?? "rtk", "rewrite", command], {
       cwd: root,
-      env: {
+      env: isolatedRtkEnvironment({
         ...globalThis.process.env,
         ...dependencies.environment,
-        RTK_TEE: "0",
-        RTK_TELEMETRY_DISABLED: "1",
-      },
+      }),
       stdout: "pipe",
       stderr: "pipe",
     })
@@ -129,6 +124,7 @@ async function rewriteCommand(
 
     const rewritten = result.stdout.trim()
     if (!rewritten || rewritten === command) return { command, status: "unchanged" }
+    if (!isSafeRewrittenCommand(rewritten)) return { command, status: "failed" }
     return { command: rewritten, status: result.exitCode === 3 ? "rewritten-ask" : "rewritten" }
   } catch (error) {
     if (signal.aborted) throw abortError()
@@ -145,12 +141,6 @@ function assertForeground(command: string): void {
   }
 }
 
-function assertNoRtkEnvironmentOverride(command: string): void {
-  if (/(?:^|[^A-Za-z0-9_])(?:RTK_DB_PATH|RTK_TEE_DIR|RTK_TEE|RTK_TELEMETRY_DISABLED)\s*=/.test(command)) {
-    throw new Error("overriding command_run RTK persistence controls is not supported")
-  }
-}
-
 function hasRtkDisabled(command: string): boolean {
   return /(?:^|[\s;&|()])RTK_DISABLED=1(?:$|[\s;&|()])/.test(command)
 }
@@ -159,16 +149,27 @@ function invokesRtk(command: string): boolean {
   return /(?:^|[\s;&|()])(?:[^\s;&|()]*(?:\/|\\))?rtk(?:$|[\s;&|()])/.test(command)
 }
 
+function isRewriteEligible(command: string): boolean {
+  if (/[;&|<>()`\n\r]/.test(command)) return false
+  if (/\$\(/.test(command)) return false
+  if (/^\s*[A-Za-z_][A-Za-z0-9_]*\s*=/.test(command)) return false
+  if (/(?:^|\s)(?:env|eval|exec|export|set|source|unset|bash|sh|zsh)(?:\s|$)/.test(command)) return false
+  return !/(?:^|[^A-Za-z0-9_])(?:RTK_DB_PATH|RTK_TEE_DIR|RTK_TEE|RTK_TELEMETRY_DISABLED)\s*=/.test(command)
+}
+
+function isSafeRewrittenCommand(command: string): boolean {
+  return /^\s*rtk(?:\s|$)/.test(command) && isRewriteEligible(command)
+}
+
 function isolatedRtkEnvironment(
-  environment: Record<string, string | undefined>,
-  runtime: string
+  environment: Record<string, string | undefined>
 ): Record<string, string | undefined> {
   return {
     ...environment,
     RTK_TEE: "0",
     RTK_TELEMETRY_DISABLED: "1",
-    RTK_DB_PATH: join(runtime, "rtk.db"),
-    RTK_TEE_DIR: join(runtime, "tee"),
+    RTK_DB_PATH: "/dev/null",
+    RTK_TEE_DIR: "/dev/null",
   }
 }
 

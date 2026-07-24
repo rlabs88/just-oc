@@ -5,6 +5,8 @@ export const COMMAND_TYPES = [
   "apply_patch",
   "shell",
   "task_status",
+  "web_discover",
+  "read_media",
 ] as const
 
 export type CommandType = (typeof COMMAND_TYPES)[number]
@@ -23,6 +25,7 @@ export type CommandResult = {
   status: CommandStatus
   output: string
   metadata: Record<string, unknown>
+  attachments?: CommandAttachment[]
 }
 
 export type CommandProgress = {
@@ -39,7 +42,18 @@ export type CommandProgress = {
 export type AdapterResult = {
   output: string
   metadata?: Record<string, unknown>
+  attachments?: CommandAttachment[]
 }
+
+export type CommandAttachment = {
+  type: "file"
+  mime: string
+  url: string
+  filename?: string
+  byteLength: number
+}
+
+export type ExecutionClass = "parallel-read" | "exclusive-read" | "mutation"
 
 export type TaskCheckpoint = {
   version: 1

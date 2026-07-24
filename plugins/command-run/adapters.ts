@@ -1,24 +1,36 @@
 import { stat } from "node:fs/promises"
 import { join, relative } from "node:path"
-import type { ParsedCommand, AdapterResult, TaskCheckpoint } from "./types"
+import type { ParsedCommand, AdapterResult, ExecutionClass, TaskCheckpoint } from "./types"
 import { parseStrictObject, requireString } from "./parser"
 import { resolveWorkspacePath } from "./paths"
+import { executeReadMedia, parseMediaRequest } from "./media"
+import { executeWebDiscover, parseWebRequest, validateWebPermission, type WebDependencies } from "./web"
 
 const MAX_READ_CHARS = 40_000
 const MAX_MATCHES = 200
 
-export async function permissionPatterns(command: ParsedCommand, root: string): Promise<string[]> {
+export async function permissionPatterns(command: ParsedCommand, root: string, webDependencies: WebDependencies = {}): Promise<string[]> {
   if (command.command_type === "shell") return [command.command_line]
   if (command.command_type === "apply_patch") {
     return Promise.all(patchPaths(command.command_line).map((path) => resolveWorkspacePath(root, path)))
   }
   if (command.command_type === "task_status") return ["task_status"]
+  if (command.command_type === "web_discover") return validateWebPermission(command, root, webDependencies)
+  if (command.command_type === "read_media") {
+    const request = parseMediaRequest(command)
+    return [await resolveWorkspacePath(root, request.path)]
+  }
   const parsed = parseAdapterObject(command)
   const requestedPath = typeof parsed.path === "string" ? parsed.path : "."
   return [await resolveWorkspacePath(root, requestedPath)]
 }
 
-export async function executeAdapter(command: ParsedCommand, root: string, signal: AbortSignal): Promise<AdapterResult> {
+export async function executeAdapter(
+  command: ParsedCommand,
+  root: string,
+  signal: AbortSignal,
+  webDependencies: WebDependencies = {}
+): Promise<AdapterResult> {
   switch (command.command_type) {
     case "read": return executeRead(command, root)
     case "glob": return executeGlob(command, root)
@@ -26,7 +38,20 @@ export async function executeAdapter(command: ParsedCommand, root: string, signa
     case "apply_patch": return executePatch(command, root, signal)
     case "shell": return executeShell(command, root, signal)
     case "task_status": return executeTaskStatus(command)
+    case "web_discover": return executeWebDiscover(command, root, signal, webDependencies)
+    case "read_media": return executeReadMedia(command, root)
   }
+}
+
+export function executionClass(command: ParsedCommand): ExecutionClass {
+  if (command.command_type === "web_discover") {
+    return parseWebRequest(command).mode === "extract" ? "parallel-read" : "mutation"
+  }
+  if (command.command_type === "read_media") return "exclusive-read"
+  if (command.command_type === "read" || command.command_type === "glob" || command.command_type === "grep" || command.command_type === "task_status") {
+    return "parallel-read"
+  }
+  return "mutation"
 }
 
 function parseAdapterObject(command: ParsedCommand): Record<string, unknown> {

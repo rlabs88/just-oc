@@ -2,7 +2,10 @@ import { cortex } from "./roles/cortex"
 import { flux } from "./roles/flux"
 import { zen } from "./roles/zen"
 import {
+  COMMAND_RUN_REPLACEMENT_PERMISSIONS,
   HOOK_IDS,
+  NATIVE_TOOL_PERMISSION_KEYS,
+  NATIVE_TOOL_IDS,
   PLUGIN_IDS,
   ROLE_IDS,
   type ArchetypeConfig,
@@ -22,6 +25,7 @@ export const archetypeRegistry = {
 const roleIds = new Set<string>(ROLE_IDS)
 const pluginIds = new Set<string>(PLUGIN_IDS)
 const hookIds = new Set<string>(HOOK_IDS)
+const nativeToolIds = new Set<string>(NATIVE_TOOL_IDS)
 
 export function resolveArchetype(
   id: string,
@@ -69,7 +73,37 @@ export function validateRegistry(registry: ArchetypeRegistry = archetypeRegistry
     for (const hook of role.hooks) {
       if (!hookIds.has(hook)) fail(`Unknown hook reference: ${hook}`)
     }
+    validateNativeToolCatalog(role)
     validatePortablePrompt(role)
+  }
+}
+
+function validateNativeToolCatalog(role: ArchetypeConfig): void {
+  const catalog = role.nativeToolCatalog
+  if (!catalog) return
+
+  validateUnique(catalog.disabled, `${role.id} disabled native tool`)
+  validateUnique(catalog.retained, `${role.id} retained native tool`)
+  for (const tool of [...catalog.disabled, ...catalog.retained]) {
+    if (!nativeToolIds.has(tool)) fail(`Unknown native tool reference: ${tool}`)
+  }
+  const retained = new Set(catalog.retained)
+  const overlap = catalog.disabled.find((tool) => retained.has(tool))
+  if (overlap) fail(`Native tool cannot be both disabled and retained: ${overlap}`)
+
+  for (const tool of catalog.disabled) {
+    const replacement = COMMAND_RUN_REPLACEMENT_PERMISSIONS[
+      tool as keyof typeof COMMAND_RUN_REPLACEMENT_PERMISSIONS
+    ]
+    if (!replacement) fail(`Native tool has no complete Command Run replacement: ${tool}`)
+    if (role.permissions[replacement] !== "allow") {
+      fail(`Disabled native tool requires explicit replacement permission: ${replacement}`)
+    }
+  }
+  for (const tool of catalog.retained) {
+    if (role.permissions[NATIVE_TOOL_PERMISSION_KEYS[tool]] === "deny") {
+      fail(`Retained native tool cannot be denied: ${tool}`)
+    }
   }
 }
 

@@ -3,10 +3,12 @@ import { baseTask } from "./prompts/base-task"
 import { sharedSecurity } from "./prompts/security"
 import { enabledArchetypes, validateRegistry } from "./registry"
 import {
+  NATIVE_TOOL_PERMISSION_KEYS,
   ROLE_IDS,
   type ArchetypeConfig,
   type ArchetypeRegistry,
   type HarnessOptions,
+  type NativeCatalogMode,
   type OpenCodeAgentConfig,
   type OpenCodePermissionConfig,
   type OpenCodeV2Config,
@@ -36,7 +38,7 @@ export function createAgentConfigs(
   const enabled = new Set(enabledArchetypes(registry, options).map((role) => role.id))
   return Object.fromEntries(enabledArchetypes(registry, options).map((role) => [
     role.id,
-    toAgentConfig(role, enabled),
+    toAgentConfig(role, enabled, options.catalogMode?.[role.id]),
   ]))
 }
 
@@ -58,6 +60,7 @@ export function registerArchetypes(
 function toAgentConfig(
   role: ArchetypeConfig,
   enabled: ReadonlySet<RoleId>,
+  catalogMode?: NativeCatalogMode,
 ): OpenCodeAgentConfig {
   return {
     description: role.description,
@@ -69,9 +72,28 @@ function toAgentConfig(
     temperature: role.model.temperature,
     top_p: role.model.topP,
     steps: role.model.steps,
-    permission: filterTaskPermissions(role.permissions, enabled),
+    permission: applyNativeToolCatalog(
+      filterTaskPermissions(role.permissions, enabled),
+      role,
+      catalogMode,
+    ),
     prompt: composePrompt(role),
   }
+}
+
+function applyNativeToolCatalog(
+  permissions: OpenCodePermissionConfig,
+  role: ArchetypeConfig,
+  mode: NativeCatalogMode | undefined,
+): OpenCodePermissionConfig {
+  const catalog = role.nativeToolCatalog
+  if (!catalog || (mode ?? catalog.defaultMode) === "hybrid") return permissions
+
+  const disabled = Object.fromEntries(catalog.disabled.map((tool) => [
+    NATIVE_TOOL_PERMISSION_KEYS[tool],
+    "deny" as const,
+  ]))
+  return { ...permissions, ...disabled }
 }
 
 function filterTaskPermissions(

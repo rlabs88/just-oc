@@ -65,6 +65,18 @@ The Agent Archetype System never copies their tools or autoloads a second
 instance. The pinned host does not apply the typed per-agent `tools` field, so
 the OpenCode permission map is the authoritative Cortex-only Command Run gate.
 
+Cortex's validated compressed catalogue denies the native `read`, `glob`,
+`grep`, and `edit` permissions; `edit` is the host permission that controls the
+exposed `apply_patch` tool. The corresponding Command Run constituent
+permissions remain explicitly allowed. Native `bash`, `webfetch`, `task`,
+`todowrite`, and `skill` stay available because Command Run does not fully
+replace their interactive, delegation, or host-owned behavior. The typed
+catalogue can be switched back to `hybrid` without changing the role's base
+permission policy. The validated host exposes no separate native media tool;
+Command Run's bounded `read_media` attachment path remains enabled, while
+unsupported media formats stay an explicit limitation rather than silently
+re-enabling the general native `read` tool.
+
 ## Hook routing
 
 Register only hooks declared by the pinned plugin API. The `chat.message` hook

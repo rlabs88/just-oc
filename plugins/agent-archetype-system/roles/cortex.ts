@@ -25,6 +25,11 @@ export const cortex = {
     command_run_web_discover: "allow",
     command_run_read_media: "allow",
   },
+  nativeToolCatalog: {
+    defaultMode: "compressed",
+    disabled: ["read", "glob", "grep", "apply_patch"],
+    retained: ["bash", "webfetch", "task", "todowrite", "skill"],
+  },
   plugins: ["background-tasks", "zellij", "command-run"],
   hooks: ["tool-audit"],
   prompts: {

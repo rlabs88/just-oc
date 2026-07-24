@@ -43,6 +43,7 @@ export interface ArchetypeConfig {
   readonly color: NonNullable<OpenCodeAgentConfig["color"]>
   readonly model: ModelSettings
   readonly permissions: OpenCodePermissionConfig
+  readonly nativeToolCatalog?: NativeToolCatalog
   readonly plugins: readonly IndependentPluginId[]
   readonly hooks: readonly ArchetypeHookId[]
   readonly prompts: PromptAdditions
@@ -52,6 +53,46 @@ export type ArchetypeRegistry = Readonly<Record<RoleId, ArchetypeConfig>>
 
 export interface HarnessOptions {
   readonly enabled?: Partial<Record<RoleId, boolean>>
+  readonly catalogMode?: Partial<Record<RoleId, NativeCatalogMode>>
+}
+
+export const NATIVE_TOOL_IDS = [
+  "read",
+  "glob",
+  "grep",
+  "apply_patch",
+  "bash",
+  "webfetch",
+  "task",
+  "todowrite",
+  "skill",
+] as const
+export type NativeToolId = (typeof NATIVE_TOOL_IDS)[number]
+export type NativeCatalogMode = "hybrid" | "compressed"
+
+export const NATIVE_TOOL_PERMISSION_KEYS = {
+  read: "read",
+  glob: "glob",
+  grep: "grep",
+  apply_patch: "edit",
+  bash: "bash",
+  webfetch: "webfetch",
+  task: "task",
+  todowrite: "todowrite",
+  skill: "skill",
+} as const satisfies Record<NativeToolId, string>
+
+export const COMMAND_RUN_REPLACEMENT_PERMISSIONS = {
+  read: "command_run_read",
+  glob: "command_run_glob",
+  grep: "command_run_grep",
+  apply_patch: "command_run_apply_patch",
+} as const satisfies Partial<Record<NativeToolId, string>>
+
+export interface NativeToolCatalog {
+  readonly defaultMode: NativeCatalogMode
+  readonly disabled: readonly NativeToolId[]
+  readonly retained: readonly NativeToolId[]
 }
 
 export interface HookRoute {

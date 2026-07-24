@@ -25,9 +25,10 @@ The versioned `metadata.commandRun` trace is the authoritative progress
 transport. OpenCode 1.17.5 persists and emits that metadata, but its stock TUI
 and GUI generic tool renderers do not display custom metadata; the GUI also
 ignores generic tool output. The required primitive `description` input carries
-a concise inventory of every submitted child because both stock generic
-renderers expose that field on the parent tool row. It is a presentation hint,
-not authority; the structured commands and final trace remain authoritative.
+a readable one-line inventory of every submitted child, grouped by dependency
+step, because both stock generic renderers expose that field on the parent tool
+row. It is a presentation hint, not authority; the structured commands and
+final trace remain authoritative.
 TUI toasts are bounded best-effort milestones, and their endpoint may succeed
 when no TUI is attached. This bundle does not claim custom renderer integration
 and does not patch or fork OpenCode.

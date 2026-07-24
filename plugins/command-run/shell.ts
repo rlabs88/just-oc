@@ -60,12 +60,13 @@ export async function executeShell(
   dependencies: ShellDependencies = {}
 ): Promise<AdapterResult> {
   assertForeground(originalCommand)
+  assertNoRtkEnvironmentOverride(originalCommand)
   const rewrite = await rewriteCommand(originalCommand, root, signal, dependencies)
   if (signal.aborted) throw abortError()
 
-  const runtime = rewrite.command === originalCommand
-    ? undefined
-    : await mkdtemp(join(root, ".rtk-runtime-"))
+  const runtime = invokesRtk(rewrite.command)
+    ? await mkdtemp(join(root, ".rtk-runtime-"))
+    : undefined
   const environment = runtime
     ? isolatedRtkEnvironment(dependencies.environment ?? process.env, runtime)
     : dependencies.environment
@@ -141,6 +142,12 @@ async function rewriteCommand(
 function assertForeground(command: string): void {
   if (/(^|[^&])&($|[^&])|\b(?:nohup|disown)\b/.test(command)) {
     throw new Error("background shell execution is not supported")
+  }
+}
+
+function assertNoRtkEnvironmentOverride(command: string): void {
+  if (/(?:^|[^A-Za-z0-9_])(?:RTK_DB_PATH|RTK_TEE_DIR|RTK_TEE|RTK_TELEMETRY_DISABLED)\s*=/.test(command)) {
+    throw new Error("overriding command_run RTK persistence controls is not supported")
   }
 }
 

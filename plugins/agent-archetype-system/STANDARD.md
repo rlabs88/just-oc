@@ -58,10 +58,24 @@ casts elsewhere.
 
 ## Plugin and tool ownership
 
-Background Tasks and Zellij remain independent bundles with their own project
-autoloaders and tool ownership. Archetypes select those stable plugin IDs as
-configuration metadata; the registry deduplicates the selection. The Agent
-Archetype System never copies their tools or autoloads a second instance.
+Background Tasks, Zellij, and Command Run remain independent bundles with their
+own project autoloaders and tool ownership. Archetypes select those stable
+plugin IDs as configuration metadata; the registry deduplicates the selection.
+The Agent Archetype System never copies their tools or autoloads a second
+instance. The pinned host does not apply the typed per-agent `tools` field, so
+the OpenCode permission map is the authoritative Cortex-only Command Run gate.
+
+Cortex's validated compressed catalogue denies the native `read`, `glob`,
+`grep`, and `edit` permissions; `edit` is the host permission that controls the
+exposed `apply_patch` tool. The corresponding Command Run constituent
+permissions remain explicitly allowed. Native `bash`, `webfetch`, `task`,
+`todowrite`, and `skill` stay available because Command Run does not fully
+replace their interactive, delegation, or host-owned behavior. The typed
+catalogue can be switched back to `hybrid` without changing the role's base
+permission policy. The validated host exposes no separate native media tool;
+Command Run's bounded `read_media` attachment path remains enabled, while
+unsupported media formats stay an explicit limitation rather than silently
+re-enabling the general native `read` tool.
 
 ## Hook routing
 
@@ -70,6 +84,14 @@ observes the host-provided agent for a session. Tool hooks route only when that
 session belongs to an enabled registered archetype and the role selects the
 semantic hook. OpenCode permission configuration remains authoritative; the
 plugin does not install a parallel permission hook.
+
+Cortex continuity is reconstructed from OpenCode-owned session messages. A
+completed Command Run tool part may contribute one validated, bounded task
+checkpoint. The selected task type can inject one static allowlisted manual;
+checkpoint text never becomes system instruction. Compaction hooks append an
+operational handoff request and label model-authored checkpoint context as
+untrusted provenance. Live hook state is only an optimization over that
+transcript authority.
 
 ## Enablement
 

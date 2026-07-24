@@ -14,7 +14,7 @@ export const displayName = "Agent Archetype System"
 export const selectedPlugins = collectSelectedPlugins(archetypeRegistry)
 export const selectedHooks = collectSelectedHooks(archetypeRegistry)
 
-const AgentArchetypeSystemPlugin: Plugin = async () => {
+const AgentArchetypeSystemPlugin: Plugin = async (input) => {
   validateRegistry(archetypeRegistry)
   return {
     config: async (config) => {
@@ -23,7 +23,16 @@ const AgentArchetypeSystemPlugin: Plugin = async () => {
       // deliberately confined to this host boundary.
       registerArchetypes(config as unknown as OpenCodeV2Config, archetypeRegistry)
     },
-    ...createArchetypeHooks(archetypeRegistry),
+    ...createArchetypeHooks(archetypeRegistry, undefined, {
+      messages: async (sessionID) => {
+        const response = await input.client.session.messages({
+          path: { id: sessionID },
+          query: { directory: input.directory },
+        })
+        if (response.error) throw response.error
+        return response.data ?? []
+      },
+    }),
   }
 }
 

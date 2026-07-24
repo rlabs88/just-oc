@@ -34,6 +34,11 @@ commands disable RTK telemetry and tee output, and keep any RTK database or tee
 state disabled through the null device. Compound or environment-mutating shell
 commands stay raw so command-local expansion cannot override those controls.
 
+Task status carries a broad task group, an ordered unique set of allowlisted
+manual types, a lifecycle status, and an optional bounded phase checkpoint. A
+legacy single manual value is normalized for transcript compatibility. Task
+status remains inert metadata and never grants permission or runtime authority.
+
 ## Exclusions
 
 The bundle does not dispatch native OpenCode tools, patch OpenCode, store session

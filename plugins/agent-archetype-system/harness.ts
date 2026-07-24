@@ -21,11 +21,11 @@ export function composePrompt(role: ArchetypeConfig): string {
     : "No role-specific security additions."
 
   return [
-    section("Base Identity", baseIdentity),
+    section("Base Identity", role.prompts.baseIdentity ?? baseIdentity),
     section("Role Identity", role.prompts.identity),
-    section("Shared Security", sharedSecurity),
+    section("Shared Security", role.prompts.sharedSecurity ?? sharedSecurity),
     section("Role Security Additions", roleSecurity),
-    section("Base Task Behavior", baseTask),
+    section("Base Task Behavior", role.prompts.baseTask ?? baseTask),
     section("Role Task Behavior", role.prompts.task),
   ].join("\n\n") + "\n"
 }

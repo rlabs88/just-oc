@@ -55,10 +55,28 @@ export type CommandAttachment = {
 
 export type ExecutionClass = "parallel-read" | "exclusive-read" | "mutation"
 
+export const TASK_TYPES = [
+  "implementation",
+  "new_build",
+  "debugging",
+  "refactoring",
+  "architecture",
+  "review",
+  "research",
+  "data_research",
+  "visual_inspection",
+  "frontend",
+  "website",
+  "interactive_3d",
+  "editorial",
+  "operations",
+] as const
+export type TaskType = (typeof TASK_TYPES)[number]
+
 export type TaskCheckpoint = {
   version: 1
   task_group: string
-  task_type: "implementation" | "debugging" | "architecture" | "review" | "research" | "visual_inspection"
+  task_type: readonly TaskType[]
   status: "doing" | "question" | "done"
-  compact_context: string
+  compact_context?: string
 }

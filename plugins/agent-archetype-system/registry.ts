@@ -113,10 +113,13 @@ function validateUnique(values: readonly string[], label: string): void {
 
 function validatePortablePrompt(role: ArchetypeConfig): void {
   const additions = [
+    role.prompts.baseIdentity,
     role.prompts.identity,
+    role.prompts.sharedSecurity,
     ...role.prompts.security,
+    role.prompts.baseTask,
     role.prompts.task,
-  ].join("\n")
+  ].filter((prompt): prompt is string => typeof prompt === "string").join("\n")
   const forbidden = [
     /(?:^|\s)\/(?:Users|home)\/[\w.-]+\//,
     /[A-Za-z]:\\Users\\/,

@@ -1,7 +1,7 @@
 apiVersion: agent-toolkit/v1
 
   - id: matt-pocock-skills
-    description: EugeneChan00 fork of Matt Pocock's skills library, vendored as a submodule for Linear-compliant local skill use
+    description: rlabs88 fork of Matt Pocock's skills library, vendored as a submodule for Linear-compliant local skill use
     path: skill-bank/skills
     skills:
       - design-an-interface

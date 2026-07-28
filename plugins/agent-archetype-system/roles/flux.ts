@@ -4,7 +4,7 @@ import { fluxPrompt } from "../prompts/flux"
 export const flux = {
   id: "flux",
   displayName: "Flux",
-  description: "Divergent engineering archetype for design, interface work, scoping, and implementation reached by re-posing the problem before committing.",
+  description: "Divergent archetype for design, interface work, scoping, and any open problem, reached by re-posing it before committing.",
   enabled: true,
   mode: "all",
   hidden: false,

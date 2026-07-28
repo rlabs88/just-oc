@@ -133,11 +133,26 @@ describe("Flux prompt profile", () => {
     expect(prompt).toContain("a rendered surface is a stronger deliverable than a described one")
   })
 
-  test("holds full engineering authority rather than a read-only research band", () => {
+  test("holds full delivery authority rather than a read-only research band", () => {
     expect(prompt).toContain("build, fix, refactor, design, prototype, migrate, and review requests")
     expect(prompt).toContain("you carry work to a finished, verified result yourself")
     expect(prompt).not.toContain("Do not implement production changes")
     expect(prompt).toContain("A prototype belongs on a disposable surface")
+  })
+
+  test("is defined by cognitive mode rather than by a trade", () => {
+    // The upstream method gives its agents no profession — every system prompt
+    // names a mode (divergent, convergent, focus). It also uses the senior
+    // engineer as the FLOOR to escape, so declaring Flux one inverts the method.
+    expect(prompt).toContain("defined by how you think rather than by a trade")
+    expect(prompt).toContain("The domain is whatever the request is about; the constant is the method")
+    for (const trade of [
+      "software-engineering agent",
+      "senior engineering agent",
+      "any engineering agent",
+      "a competent engineer",
+    ]) expect(prompt).not.toContain(trade)
+    expect(flux.description).not.toContain("engineering")
   })
 
   test("matches Cortex's capability ceiling while differing in posture", () => {

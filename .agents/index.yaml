@@ -1,5 +1,16 @@
 apiVersion: agent-toolkit/v1
 
+sources:
+  - id: herdr
+    description: Herdr pane and neighboring-agent control for OpenCode sessions launched inside Herdr
+    repo: ogulcancelik/herdr
+    skills:
+      - herdr
+    overrides:
+      scope: project
+      agents: [opencode]
+      gitnored: true
+
 osrc:
   - id: claude-code-system-prompts
     description: Extracted Claude Code prompt components used as a comparative design reference
@@ -46,6 +57,21 @@ osrc:
       related:
         skills: [deep-wiki]
 
+  - id: tura
+    description: Tura-AI coding-agent harness used to study its agent loop, prompt composition, and tool protocol
+    spec: Tura-AI/tura
+    guide:
+      purpose: Distill Tura's software-engineering agent loop and assess which mechanisms can be adapted through supported OpenCode plugin surfaces
+      explore_when:
+        - Investigating RT-269 or related coding-agent harness designs
+        - Comparing agent loops, prompt construction, tool protocols, and termination behavior
+      skip_when:
+        - Implementing unrelated OpenCode plugin behavior
+      importance: high
+      tags: [tura, coding-agent, harness, agent-loop, reference]
+      related:
+        skills: [just-lib, deep-wiki]
+
 osrc_graph:
   - from: claude-code-system-prompts
     to: codex
@@ -53,9 +79,13 @@ osrc_graph:
     note: Compare independently evolved coding-agent prompt components; do not copy either wholesale.
   - from: opencode
     to: claude-code-system-prompts
-    relation: hosts_adapted_concepts_from
+    relation: see_also
     note: OpenCode owns runtime behavior; prompt references inform model-neutral composition only.
   - from: opencode
     to: codex
-    relation: hosts_adapted_concepts_from
+    relation: see_also
     note: OpenCode owns runtime behavior; prompt references inform model-neutral composition only.
+  - from: tura
+    to: opencode
+    relation: contrasts_with
+    note: Tura is a mechanism reference; OpenCode remains the runtime contract for any proposed plugin adaptation.

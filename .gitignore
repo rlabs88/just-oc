@@ -5,3 +5,8 @@
 *.log
 node_modules/
 .opencode/node_modules/
+
+# Agent skills (gitnored via .agents/index.yaml)
+.agents/skills/
+.opencode/skills/
+skills-lock.json

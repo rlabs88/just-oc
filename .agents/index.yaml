@@ -107,4 +107,9 @@ osrc_graph:
   - from: adhd
     to: opencode
     relation: contrasts_with
-    note: ADHD mechanisms are distilled into prompt prose only; the skill is never vendored into this repository.
+    note: >-
+      Prompt-only adoption under MIT. No source, dependency, or skill file is installed or imported;
+      the mechanisms live as prose in the Flux archetype profile. The 15-frame vantage library in that
+      profile reproduces the upstream frame set, ordering, and wild classification with condensed
+      vocabulary, so it is attribution-bearing reuse rather than independent derivation. Installing the
+      upstream skill or its CLI as a real tool remains a separate, unmade decision.

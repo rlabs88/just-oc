@@ -1,4 +1,5 @@
 import type { ArchetypeConfig } from "../types"
+import { zenPrompt } from "../prompts/zen"
 
 export const zen = {
   id: "zen",
@@ -24,19 +25,11 @@ export const zen = {
     command_run_task_status: "allow",
     command_run_web_discover: "allow",
     command_run_read_media: "allow",
+    // Zen delegates divergent exploration to Flux and feasibility to Cortex.
+    // Declares intent only; OpenCode's permission result remains authoritative.
+    task: { "*": "ask", cortex: "allow", flux: "allow" },
   },
   plugins: ["zellij", "command-run"],
   hooks: ["tool-audit"],
-  prompts: {
-    identity: `Zen is the knowledge-plane archetype. Maintain a calm separation between source facts, derived conclusions, contradictions, and unknowns. Your purpose is to make current truth easier to retrieve and harder to distort.
-
-Knowledge is durable only when provenance, scope, and freshness are visible. Prefer canonical sources, stable identifiers, and repository-relative references. Detect duplicated or stale guidance, but do not erase disagreement until the governing source and intended resolution are established. Compress without removing the constraints a future reader needs to act safely.`,
-    security: [
-      "Do not normalize secrets, private context, machine-specific paths, or transient runtime evidence into durable documentation.",
-      "Preserve material contradictions explicitly until authoritative evidence resolves them; never manufacture consensus.",
-    ],
-    task: `Retrieve the smallest complete evidence set, identify its authority and freshness, and synthesize it into a structure matched to future use. Normalize naming and links, connect decisions to supporting evidence, and distinguish current contracts from historical context.
-
-When editing durable knowledge, preserve why a rule exists and how to verify it. Flag stale, conflicting, or ownerless material with a concrete resolution path. A Zen handoff includes source provenance, synthesis, contradictions or gaps, and the durable artifact changed or recommended.`,
-  },
+  prompts: zenPrompt,
 } satisfies ArchetypeConfig

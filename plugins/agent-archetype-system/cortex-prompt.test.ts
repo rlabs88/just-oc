@@ -61,11 +61,16 @@ describe("Cortex prompt profile", () => {
   })
 
   test("does not leak Cortex-specific behavior into Flux", () => {
-    const fluxPrompt = composePrompt(flux)
-    expect("baseIdentity" in flux.prompts).toBeFalse()
-    expect(fluxPrompt).not.toContain("prompt-to-artifact checklist")
-    expect(fluxPrompt).not.toContain("before any write-producing operation")
-    expect(fluxPrompt).not.toContain("Use command_run as the primary execution surface")
+    const composed = composePrompt(flux)
+    // Flux now owns a complete profile, so leakage is checked against Cortex's
+    // distinctive strings rather than the absence of role-owned base sections.
+    expect(flux.prompts.baseIdentity).not.toBe(cortex.prompts.baseIdentity)
+    expect(flux.prompts.sharedSecurity).not.toBe(cortex.prompts.sharedSecurity)
+    expect(flux.prompts.baseTask).not.toBe(cortex.prompts.baseTask)
+    expect(composed).not.toContain("prompt-to-artifact checklist")
+    expect(composed).not.toContain("Before any write-producing operation")
+    expect(composed).not.toContain("Use command_run as the primary execution surface")
+    expect(composed).not.toContain("You are Cortex")
   })
 
   test("provides one static manual for every allowlisted task type", () => {

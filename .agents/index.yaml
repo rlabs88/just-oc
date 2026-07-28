@@ -72,6 +72,21 @@ osrc:
       related:
         skills: [just-lib, deep-wiki]
 
+  - id: adhd
+    description: Parallel divergent-ideation skill for coding agents, distilled into the Flux archetype prompt profile
+    spec: UditAkhourii/adhd
+    guide:
+      purpose: Source of the generator/critic split, cognitive-frame fan-out, branch isolation, and score-cluster-prune convergence distilled into Flux
+      explore_when:
+        - Revising the Flux divergent-ideation prompt profile
+        - Comparing tree-of-thought and frame-based exploration mechanisms for research archetypes
+      skip_when:
+        - Working on convergent implementation behavior owned by Cortex
+      importance: high
+      tags: [adhd, divergent-ideation, prompts, flux, reference]
+      related:
+        skills: [deep-wiki]
+
 osrc_graph:
   - from: claude-code-system-prompts
     to: codex
@@ -89,3 +104,7 @@ osrc_graph:
     to: opencode
     relation: contrasts_with
     note: Tura is a mechanism reference; OpenCode remains the runtime contract for any proposed plugin adaptation.
+  - from: adhd
+    to: opencode
+    relation: contrasts_with
+    note: ADHD mechanisms are distilled into prompt prose only; the skill is never vendored into this repository.

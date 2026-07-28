@@ -40,9 +40,13 @@ Every final agent prompt contains these sections in this exact order:
 
 Shared prompts are detailed, model-neutral host behavior. Role prompts normally
 narrow that baseline without overriding its security or truthfulness boundaries.
-Cortex owns a complete six-section profile because its execution and continuity
-contract is intentionally denser; the harness still composes the same ordered
-sections, while Flux and Zen continue to use the shared baselines.
+Cortex, Flux, and Zen each own a complete six-section profile because their
+execution, exploration, and continuity contracts diverge past what one baseline
+can express; the harness still composes the same ordered sections. The shared
+baselines in `prompts/` remain the fallback contract for any role that does not
+own a section, and the invariants they encode — instruction precedence, host
+authority, and permission ceilings — must stay identical wherever a role
+restates them.
 
 ## Typed role configuration
 

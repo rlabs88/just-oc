@@ -4,15 +4,16 @@ import { fluxPrompt } from "../prompts/flux"
 export const flux = {
   id: "flux",
   displayName: "Flux",
-  description: "Research and scoping archetype for broad discovery, alternatives, trade-offs, and convergence into bounded action.",
+  description: "Divergent engineering archetype for design, interface work, scoping, and implementation reached by re-posing the problem before committing.",
   enabled: true,
   mode: "all",
   hidden: false,
   color: "accent",
   model: {
     model: "openai/gpt-5.6-luna",
-    temperature: 0.5,
-    steps: 48,
+    // Higher than Cortex: vantage selection and candidate range are sampling-driven.
+    temperature: 0.7,
+    steps: 80,
   },
   permissions: {
     "*": "allow",
@@ -26,7 +27,12 @@ export const flux = {
     command_run_web_discover: "allow",
     command_run_read_media: "allow",
   },
-  plugins: ["background-tasks", "command-run"],
+  nativeToolCatalog: {
+    defaultMode: "compressed",
+    disabled: ["read", "glob", "grep", "apply_patch"],
+    retained: ["bash", "webfetch", "task", "todowrite", "skill"],
+  },
+  plugins: ["background-tasks", "zellij", "command-run"],
   hooks: ["tool-audit"],
   prompts: fluxPrompt,
 } satisfies ArchetypeConfig

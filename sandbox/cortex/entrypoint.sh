@@ -5,11 +5,13 @@ state="${XDG_DATA_HOME:-/var/lib/opencode}"
 workspace="${OPENCODE_WORKSPACE:-/workspace}"
 config_root="${XDG_CONFIG_HOME:-/etc/cortex-sandbox/config}"
 
+# The first compatibility pass is the read-only admission gate. Ownership,
+# modes, and metadata remain untouched until retained surfaces are accepted.
+bun /opt/just-oc/sandbox/cortex/probe.ts compatibility \
+  --state "$state" --workspace "$workspace"
+
 install -d -o cortex -g cortex "$state" "$workspace"
 install -d -o cortex -g cortex "$HOME/.cache/opencode" "$HOME/.bun/install/cache"
-
-# This is the read-only admission gate. Initialization writes metadata only
-# after the retained surfaces have been accepted as fresh or compatible.
 gosu cortex bun /opt/just-oc/sandbox/cortex/probe.ts compatibility \
   --state "$state" --workspace "$workspace" --initialize
 
@@ -40,6 +42,7 @@ case "$1" in
   *Password*) printf '%s' "${SANDBOX_GIT_TOKEN:-}" ;;
 esac
 ASKPASS
+  chown cortex:cortex "$askpass"
   chmod 0700 "$askpass"
   clone_args=(clone)
   if [[ -n "${SANDBOX_REPO_BRANCH:-}" ]]; then

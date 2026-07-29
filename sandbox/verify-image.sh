@@ -6,10 +6,16 @@ suffix="$(date +%s)-$$"
 state_volume="aes12-cortex-state-$suffix"
 workspace_volume="aes12-cortex-workspace-$suffix"
 container="aes12-cortex-$suffix"
+clone_state_volume="aes12-cortex-clone-state-$suffix"
+clone_workspace_volume="aes12-cortex-clone-workspace-$suffix"
+clone_container="aes12-cortex-clone-$suffix"
 
 cleanup() {
   docker rm -f "$container" >/dev/null 2>&1 || true
-  docker volume rm "$state_volume" "$workspace_volume" >/dev/null 2>&1 || true
+  docker rm -f "$clone_container" >/dev/null 2>&1 || true
+  docker volume rm \
+    "$state_volume" "$workspace_volume" \
+    "$clone_state_volume" "$clone_workspace_volume" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -31,28 +37,76 @@ start() {
 }
 
 wait_healthy() {
+  wait_healthy_for "$container"
+}
+
+wait_healthy_for() {
+  local container_name="$1"
   local port
-  port="$(docker port "$container" 4096/tcp | sed 's/.*://')"
+  port="$(docker port "$container_name" 4096/tcp | sed 's/.*://')"
   for _ in $(seq 1 60); do
-    if curl --fail --silent "http://127.0.0.1:$port/api/health" | jq -e '.healthy == true' >/dev/null 2>&1; then
+    if curl --fail --silent --connect-timeout 1 --max-time 2 \
+      "http://127.0.0.1:$port/api/health" \
+      | jq -e '.healthy == true' >/dev/null 2>&1; then
       printf '%s\n' "$port"
       return 0
     fi
     sleep 1
   done
-  docker logs "$container" >&2
+  docker logs "$container_name" >&2
   return 1
+}
+
+verify_private_clone() {
+  docker volume create "$clone_state_volume" >/dev/null
+  docker volume create "$clone_workspace_volume" >/dev/null
+  docker run --detach --name "$clone_container" \
+    --publish 127.0.0.1::4096 \
+    --mount "type=volume,source=$clone_state_volume,target=/var/lib/opencode" \
+    --mount "type=volume,source=$clone_workspace_volume,target=/workspace" \
+    --env SANDBOX_REPO_URL=https://git.example.invalid/private/repo.git \
+    --env SANDBOX_GIT_TOKEN=aes12-private-clone-token \
+    --entrypoint /bin/bash \
+    "$image" -lc '
+      set -euo pipefail
+      install -d /tmp/aes12-test-bin
+      cat > /tmp/aes12-test-bin/git <<'"'"'FAKE_GIT'"'"'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$(id -u)" == 10001 ]]
+[[ -x "$GIT_ASKPASS" ]]
+[[ "$("$GIT_ASKPASS" "Username for private repository")" == x-access-token ]]
+[[ "$("$GIT_ASKPASS" "Password for private repository")" == "$SANDBOX_GIT_TOKEN" ]]
+[[ "$*" == "clone https://git.example.invalid/private/repo.git /workspace" ]]
+mkdir -p /workspace/.git
+touch /workspace/.private-clone-probe
+FAKE_GIT
+      chmod 0755 /tmp/aes12-test-bin/git
+      export PATH="/tmp/aes12-test-bin:$PATH"
+      exec /usr/local/bin/sandbox-entrypoint
+    ' >/dev/null
+  wait_healthy_for "$clone_container" >/dev/null
+  docker exec "$clone_container" test -f /workspace/.private-clone-probe
+  if docker exec --user cortex "$clone_container" /bin/bash -o pipefail -lc \
+    "tr '\\0' '\\n' < /proc/1/environ | grep -q '^SANDBOX_GIT_TOKEN='"; then
+    echo "sandbox git token survived into the OpenCode server environment" >&2
+    return 1
+  fi
+  docker rm -f "$clone_container" >/dev/null
 }
 
 start
 port="$(wait_healthy)"
-curl --fail --silent "http://127.0.0.1:$port/agent" | jq -e '
+curl --fail --silent --connect-timeout 1 --max-time 5 \
+  "http://127.0.0.1:$port/agent" | jq -e '
   (if type == "array" then . else .data end)
   | any(.name == "cortex" and .mode == "all")
 ' >/dev/null
 docker exec "$container" gosu cortex bun /opt/just-oc/sandbox/cortex/probe.ts all \
   --state /var/lib/opencode --workspace /workspace >/dev/null
 session_id="$(curl --fail --silent \
+  --connect-timeout 1 \
+  --max-time 5 \
   --request POST \
   --header 'Content-Type: application/json' \
   --data '{"location":{"directory":"/workspace"}}' \
@@ -104,5 +158,7 @@ if rg --text --ignore-case --max-count 1 \
   exit 1
 fi
 rm -f "$exported"
+
+verify_private_clone
 
 echo "Cortex sandbox image validation passed for $image"

@@ -243,7 +243,10 @@ printf '%s' "$labels" | jq -e '
 ' >/dev/null
 
 docker run --rm --entrypoint /bin/bash "$image" -lc \
-  'cd /etc/cortex-sandbox && sha256sum --check rpm-inventory.tsv.sha256'
+  'grep -Eq "^[0-9a-f]{64}  /etc/cortex-sandbox/rpm-inventory.tsv$" \
+      /etc/cortex-sandbox/rpm-inventory.tsv.sha256 \
+    && cd /etc/cortex-sandbox \
+    && sha256sum --check rpm-inventory.tsv.sha256'
 
 image_size="$(docker image inspect "$image" --format '{{.Size}}')"
 max_image_size="$(docker run --rm --entrypoint jq "$image" -r '.sizeBudget.uncompressedBytes' /etc/cortex-sandbox/toolchain.lock.json)"

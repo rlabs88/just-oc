@@ -1,3 +1,5 @@
+import { agentToolPackageJson } from "./agent-tools"
+
 type Lock = {
   base: { distribution: string; version: string }
   formulae: Record<string, string>
@@ -60,7 +62,7 @@ const npmTools: Array<[string, string, string]> = [
 ]
 for (const [command, packageDirectory, lockName] of npmTools) {
   if (!Bun.which(command)) throw new Error(`missing agent CLI ${command}`)
-  const packageJson = await Bun.file(`/opt/agent-tools/lib/node_modules/${packageDirectory}/package.json`).json() as {
+  const packageJson = await Bun.file(agentToolPackageJson(packageDirectory)).json() as {
     version?: string
   }
   if (packageJson.version !== lock.npmPackages[lockName]) {

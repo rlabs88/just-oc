@@ -8,6 +8,11 @@ artifacts, compatibility schemas, and size budgets. The release platform is
 `linux/arm64`; both the build and the running sandbox reject any other
 architecture.
 
+Local builds fail before dependency resolution unless `uname -m`, the Docker
+server architecture, and the bootstrapped Buildx platform set all prove a
+native ARM64 path. An x86 host, x86 Docker daemon, or builder without
+`linux/arm64` support is rejected rather than routed through emulation.
+
 The sandbox copies only the pinned shell loaders, shell utilities, and Neovim
 configuration; unrelated private `.config` content never enters the build. The
 allowlisted files are scanned for credential-shaped material before use. The overlay

@@ -14,6 +14,8 @@ dotfiles_revision="$(jq -r '.dotfiles.revision' "$lock")"
 fedora_image="$(jq -r '.base.image' "$lock")"
 fedora_arm64_manifest="$(jq -r '.base.arm64Manifest' "$lock")"
 
+"$root/sandbox/verify-arm64-host.sh"
+
 [[ -z "$(git -C "$dotfiles_checkout" status --porcelain)" ]] || {
   echo "dotfiles checkout must be clean" >&2
   exit 2

@@ -27,7 +27,9 @@ RUN test "${TARGETARCH}" = arm64 \
     && rpm -qa --qf '%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n' \
       | LC_ALL=C sort > /etc/cortex-sandbox/rpm-inventory.tsv \
     && sha256sum /etc/cortex-sandbox/rpm-inventory.tsv \
-      > /etc/cortex-sandbox/rpm-inventory.tsv.sha256
+      > /etc/cortex-sandbox/rpm-inventory.tsv.sha256 \
+    && grep -Eq '^[0-9a-f]{64}  /etc/cortex-sandbox/rpm-inventory.tsv$' \
+      /etc/cortex-sandbox/rpm-inventory.tsv.sha256
 
 RUN groupadd --gid 10001 cortex \
     && useradd --uid 10001 --gid 10001 --create-home --shell /bin/bash cortex \
@@ -210,7 +212,7 @@ COPY package.json bun.lock tsconfig.json ./
 RUN bun install --frozen-lockfile --production
 COPY plugins ./plugins
 COPY .opencode/opencode.json ./.opencode/opencode.json
-COPY sandbox/cortex/install-config.ts sandbox/cortex/probe.ts sandbox/cortex/baseline-probe.ts sandbox/cortex/provisioning.ts ./sandbox/cortex/
+COPY sandbox/cortex/install-config.ts sandbox/cortex/probe.ts sandbox/cortex/baseline-probe.ts sandbox/cortex/agent-tools.ts sandbox/cortex/provisioning.ts ./sandbox/cortex/
 COPY sandbox/cortex/entrypoint.sh /usr/local/bin/sandbox-entrypoint
 
 RUN BUILD_CREATED="${BUILD_CREATED}" \

@@ -3,6 +3,7 @@ ARG FEDORA_IMAGE=registry.fedoraproject.org/fedora:44@sha256:590825dbaee41a97a16
 FROM ${FEDORA_IMAGE} AS base
 
 ARG FEDORA_IMAGE
+ARG FEDORA_ARM64_MANIFEST=sha256:ffe227022b502caaff332d02a9c7852cc38937716d83c4065d895ea1daf8588c
 ARG TARGETARCH
 ARG BREW_REVISION=77d90328ca2f63ff4ec1f67de0ade5632f5d2335
 ARG BREW_CORE_REVISION=8f25520c64c1fe6b57f1112d028a72a2a4ce3355
@@ -15,13 +16,18 @@ ARG OPENCODE_VERSION=1.18.9
 LABEL org.opencontainers.image.title="just-oc Fedora sandbox base" \
       org.opencontainers.image.description="Pinned headless Fedora and Linuxbrew runtime for named agent environments"
 
-RUN test "${TARGETARCH}" = amd64 \
+RUN test "${TARGETARCH}" = arm64 \
     && dnf -y install --setopt=install_weak_deps=False \
       bash busybox bzip2 ca-certificates coreutils curl diffutils file findutils gcc gcc-c++ \
-      git-core gzip jq make openssh-clients patch procps-ng ruby shadow-utils tar unzip \
+      git-core grep gzip jq make openssh-clients patch procps-ng ruby shadow-utils tar unzip \
       tini util-linux which xz zsh \
     && dnf clean all \
-    && rm -rf /var/cache/dnf
+    && rm -rf /var/cache/dnf \
+    && install -d /etc/cortex-sandbox \
+    && rpm -qa --qf '%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n' \
+      | LC_ALL=C sort > /etc/cortex-sandbox/rpm-inventory.tsv \
+    && sha256sum /etc/cortex-sandbox/rpm-inventory.tsv \
+      > /etc/cortex-sandbox/rpm-inventory.tsv.sha256
 
 RUN groupadd --gid 10001 cortex \
     && useradd --uid 10001 --gid 10001 --create-home --shell /bin/bash cortex \
@@ -30,7 +36,7 @@ RUN groupadd --gid 10001 cortex \
       /opt/just-oc /workspace /var/lib/opencode
 
 ENV HOME=/home/cortex \
-    PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/opt/agent-tools/bin:/home/cortex/.local/bin:/home/cortex/.local/share/nvim/mason/bin:/usr/local/bin:/usr/bin:/bin \
+    PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/opt/agent-tools/node_modules/.bin:/home/cortex/.local/bin:/home/cortex/.local/share/nvim/mason/bin:/usr/local/bin:/usr/bin:/bin \
     HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar \
     HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew \
@@ -63,13 +69,21 @@ RUN runuser -u cortex -- env HOME=/home/cortex git init "$HOMEBREW_REPOSITORY" \
 
 COPY sandbox/toolchain.lock.json /etc/cortex-sandbox/toolchain.lock.json
 COPY sandbox/toolchain.Brewfile /opt/cortex-sandbox/toolchain.Brewfile
+COPY sandbox/verify-homebrew-lock.sh /usr/local/libexec/cortex-verify-homebrew-lock
+COPY sandbox/verify-dotfiles-source.sh /usr/local/libexec/cortex-verify-dotfiles-source
 COPY --from=dotfiles --chown=10001:10001 /brew/remote.Brewfile /home/cortex/dotfiles/brew/remote.Brewfile
 COPY --from=dotfiles --chown=10001:10001 /.bashrc /home/cortex/dotfiles/.bashrc
 COPY --from=dotfiles --chown=10001:10001 /.zshrc /home/cortex/dotfiles/.zshrc
 COPY --from=dotfiles --chown=10001:10001 /stow.sh /home/cortex/dotfiles/stow.sh
-COPY --from=dotfiles --chown=10001:10001 /.config /home/cortex/dotfiles/.config
+COPY --from=dotfiles --chown=10001:10001 /shellutil /home/cortex/dotfiles/shellutil
+COPY --from=dotfiles --chown=10001:10001 /scripts/shell-script.sh /home/cortex/dotfiles/scripts/shell-script.sh
+COPY --from=dotfiles --chown=10001:10001 /.config/nvim /home/cortex/dotfiles/.config/nvim
+
+RUN chmod 0755 /usr/local/libexec/cortex-verify-dotfiles-source \
+    && /usr/local/libexec/cortex-verify-dotfiles-source /home/cortex/dotfiles
 
 RUN test "$(jq -r '.base.image' /etc/cortex-sandbox/toolchain.lock.json)" = "$FEDORA_IMAGE" \
+    && test "$(jq -r '.base.arm64Manifest' /etc/cortex-sandbox/toolchain.lock.json)" = "$FEDORA_ARM64_MANIFEST" \
     && test "$(jq -r '.homebrew.revision' /etc/cortex-sandbox/toolchain.lock.json)" = "$BREW_REVISION" \
     && test "$(jq -r '.homebrew.coreRevision' /etc/cortex-sandbox/toolchain.lock.json)" = "$BREW_CORE_REVISION" \
     && test "$(jq -r '.dotfiles.revision' /etc/cortex-sandbox/toolchain.lock.json)" = "$DOTFILES_REVISION" \
@@ -78,25 +92,28 @@ RUN test "$(jq -r '.base.image' /etc/cortex-sandbox/toolchain.lock.json)" = "$FE
     && test "$(jq -r '.formulae.zellij' /etc/cortex-sandbox/toolchain.lock.json)" = "$ZELLIJ_VERSION" \
     && test "$(jq -r '.npmPackages["opencode-ai"]' /etc/cortex-sandbox/toolchain.lock.json)" = "$OPENCODE_VERSION"
 
+RUN chmod 0755 /usr/local/libexec/cortex-verify-homebrew-lock \
+    && /usr/local/libexec/cortex-verify-homebrew-lock \
+      /etc/cortex-sandbox/toolchain.lock.json \
+      "$HOMEBREW_REPOSITORY/Library/Taps/homebrew/homebrew-core"
+
 RUN --mount=type=cache,target=/home/cortex/.cache/Homebrew,uid=10001,gid=10001,sharing=locked \
-    awk '/^brew / {gsub(/brew |"/, ""); print}' /home/cortex/dotfiles/brew/remote.Brewfile \
-      | sed 's/^flock$/util-linux/' | sort > /tmp/source.formulae \
+    { awk '/^brew / {gsub(/brew |"/, ""); print}' /home/cortex/dotfiles/brew/remote.Brewfile \
+        | sed 's/^flock$/util-linux/'; printf '%s\n' llvm; } | sort -u > /tmp/source.formulae \
     && awk '/^brew / {gsub(/brew |"/, ""); print}' /opt/cortex-sandbox/toolchain.Brewfile | sort > /tmp/locked.formulae \
     && diff -u /tmp/source.formulae /tmp/locked.formulae \
     && mv /usr/bin/tar /usr/bin/tar.gnu \
     && ln -s /usr/bin/busybox /usr/bin/tar \
-    && runuser -u cortex -- env HOME=/home/cortex PATH="$PATH" \
-      brew bundle install --file /opt/cortex-sandbox/toolchain.Brewfile \
+    && runuser -u cortex -- env HOME=/home/cortex PATH="$PATH" /bin/bash -euo pipefail -c \
+      'mapfile -t formulae < <(awk '\''/^brew / {gsub(/brew |"/, ""); print}'\'' /opt/cortex-sandbox/toolchain.Brewfile); brew install --force-bottle "${formulae[@]}"; brew bundle check --file /opt/cortex-sandbox/toolchain.Brewfile' \
     && rm /usr/bin/tar \
     && mv /usr/bin/tar.gnu /usr/bin/tar \
     && rm -f /tmp/source.formulae /tmp/locked.formulae
 
-RUN npm install --global --prefix /opt/agent-tools \
-      @anthropic-ai/claude-code@2.1.220 \
-      @openai/codex@0.146.0 \
-      @zed-industries/codex-acp@0.16.0 \
-      mastracode@0.32.3 \
-      opencode-ai@${OPENCODE_VERSION} \
+COPY sandbox/agent-tools/package.json sandbox/agent-tools/package-lock.json /opt/agent-tools/
+RUN test "$(sha256sum /opt/agent-tools/package-lock.json | cut -d' ' -f1)" = \
+      "$(jq -r '.agentTools.packageLockSha256' /etc/cortex-sandbox/toolchain.lock.json)" \
+    && npm ci --prefix /opt/agent-tools --ignore-scripts=false --no-audit --no-fund \
     && chown -R cortex:cortex /opt/agent-tools
 
 RUN git init /opt/cortex-sandbox/mason-registry \
@@ -134,11 +151,26 @@ RUN install -d /usr/local/libexec/cortex-build-tools \
     && runuser -u cortex -- env HOME=/home/cortex PATH="/usr/local/libexec/cortex-build-tools:$PATH" \
       nvim --headless \
         '+lua require("lazy").load({plugins={"mason.nvim"}})' \
-        '+MasonInstall pyright@1.1.411 black@26.5.1 ruff@0.16.0 clangd@22.1.6 clang-format@22.1.8 cpplint@2.0.2 typescript-language-server@5.3.0 prettier@3.9.6 eslint_d@15.0.2' \
+        '+MasonInstall pyright@1.1.411 black@26.5.1 ruff@0.16.0 clang-format@22.1.8 cpplint@2.0.2 typescript-language-server@5.3.0 prettier@3.9.6 eslint_d@15.0.2' \
         '+sleep 180' '+qa!' \
+    && install -d -o cortex -g cortex /home/cortex/.local/share/nvim/mason/packages/clangd \
+    && ln -s "$HOMEBREW_PREFIX/opt/llvm/bin/clangd" /home/cortex/.local/share/nvim/mason/bin/clangd \
+    && jq -n \
+      --arg kind homebrew-keg-link \
+      --arg formula llvm \
+      --arg version "$(jq -r '.formulae.llvm' /etc/cortex-sandbox/toolchain.lock.json)" \
+      --arg sourceBinary "$HOMEBREW_PREFIX/opt/llvm/bin/clangd" \
+      '{kind: $kind, formula: $formula, version: $version, sourceBinary: $sourceBinary}' \
+      > /home/cortex/.local/share/nvim/mason/packages/clangd/cortex-provider.json \
+    && chown -h cortex:cortex /home/cortex/.local/share/nvim/mason/bin/clangd \
+    && chown cortex:cortex /home/cortex/.local/share/nvim/mason/packages/clangd/cortex-provider.json \
     && for tool in pyright black ruff clangd clang-format cpplint typescript-language-server prettier eslint_d; do \
       test -x "/home/cortex/.local/share/nvim/mason/bin/$tool"; \
-      test -f "/home/cortex/.local/share/nvim/mason/packages/$tool/mason-receipt.json"; \
+      if test "$tool" = clangd; then \
+        test -f "/home/cortex/.local/share/nvim/mason/packages/$tool/cortex-provider.json"; \
+      else \
+        test -f "/home/cortex/.local/share/nvim/mason/packages/$tool/mason-receipt.json"; \
+      fi; \
     done \
     && rm -rf /usr/local/libexec/cortex-build-tools
 
@@ -163,6 +195,7 @@ LABEL org.opencontainers.image.title="Cortex Fedora sandbox" \
       io.rlabs.cortex.state-schema="1" \
       io.rlabs.cortex.workspace-schema="1" \
       io.rlabs.cortex.base.image="${FEDORA_IMAGE}" \
+      io.rlabs.cortex.base.arm64-manifest="${FEDORA_ARM64_MANIFEST}" \
       io.rlabs.cortex.base.fedora="44" \
       io.rlabs.cortex.homebrew.revision="${BREW_REVISION}" \
       io.rlabs.cortex.homebrew.core.revision="${BREW_CORE_REVISION}" \

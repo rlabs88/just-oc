@@ -10,12 +10,18 @@ type Lock = {
       artifact: string
       extraArtifacts?: string[]
       binaries: string[]
+      adapter?: { kind: string; formula: string; sourceBinary: string }
     }>
   }
   capabilities: { flock: { providerVersion: string } }
 }
 
 const lock = await Bun.file("/etc/cortex-sandbox/toolchain.lock.json").json() as Lock
+const machine = Bun.spawnSync(["uname", "-m"])
+if (machine.exitCode !== 0 || new TextDecoder().decode(machine.stdout).trim() !== "aarch64") {
+  throw new Error("sandbox machine architecture is not aarch64")
+}
+if (process.arch !== "arm64") throw new Error(`Bun architecture is ${process.arch}, expected arm64`)
 const commands: Array<[string, string[], string]> = [
   ["git", ["--version"], lock.formulae.git], ["gh", ["--version"], lock.formulae.gh],
   ["git-lfs", ["version"], lock.formulae["git-lfs"]], ["rg", ["--version"], lock.formulae.ripgrep],
@@ -60,6 +66,9 @@ for (const [command, packageDirectory, lockName] of npmTools) {
   if (packageJson.version !== lock.npmPackages[lockName]) {
     throw new Error(`${command} package mismatch: expected ${lock.npmPackages[lockName]}, got ${packageJson.version}`)
   }
+  const smokeArguments = command === "codex-acp" || command === "mastracode" ? ["--help"] : ["--version"]
+  const smoke = Bun.spawnSync([command, ...smokeArguments], { env: process.env })
+  if (smoke.exitCode !== 0) throw new Error(`${command} cannot execute on linux/arm64`)
 }
 
 if (Bun.which("zmx")) throw new Error("zmx must be absent from the headless baseline")
@@ -98,17 +107,29 @@ for (const [name, mason] of Object.entries(lock.mason.packages)) {
     const path = `/home/cortex/.local/share/nvim/mason/bin/${binary}`
     if (!(await Bun.file(path).exists())) throw new Error(`missing offline Mason binary ${binary}`)
   }
-  const receiptPath = `/home/cortex/.local/share/nvim/mason/packages/${name}/mason-receipt.json`
-  const receipt = await Bun.file(receiptPath).json() as {
-    name: string
-    source: { id: string }
-    registry: { proto: string; path: string }
-  }
-  if (receipt.name !== name || receipt.source.id !== mason.source) {
-    throw new Error(`Mason receipt mismatch for ${name}: expected ${mason.source}, got ${receipt.source.id}`)
-  }
-  if (receipt.registry.proto !== "file" || receipt.registry.path !== lock.mason.registry.path) {
-    throw new Error(`Mason registry receipt mismatch for ${name}`)
+  if (mason.adapter) {
+    const provider = await Bun.file(
+      `/home/cortex/.local/share/nvim/mason/packages/${name}/cortex-provider.json`,
+    ).json() as { kind: string; formula: string; version: string; sourceBinary: string }
+    if (provider.kind !== mason.adapter.kind
+      || provider.formula !== mason.adapter.formula
+      || provider.version !== mason.version
+      || provider.sourceBinary !== mason.adapter.sourceBinary) {
+      throw new Error(`architecture adapter mismatch for ${name}`)
+    }
+  } else {
+    const receiptPath = `/home/cortex/.local/share/nvim/mason/packages/${name}/mason-receipt.json`
+    const receipt = await Bun.file(receiptPath).json() as {
+      name: string
+      source: { id: string }
+      registry: { proto: string; path: string }
+    }
+    if (receipt.name !== name || receipt.source.id !== mason.source) {
+      throw new Error(`Mason receipt mismatch for ${name}: expected ${mason.source}, got ${receipt.source.id}`)
+    }
+    if (receipt.registry.proto !== "file" || receipt.registry.path !== lock.mason.registry.path) {
+      throw new Error(`Mason registry receipt mismatch for ${name}`)
+    }
   }
   const versionCommand = masonVersionCommands[name]
   if (!versionCommand) throw new Error(`missing Mason version probe for ${name}`)

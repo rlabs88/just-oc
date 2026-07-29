@@ -2,7 +2,7 @@
 set -euo pipefail
 
 image="${1:?image reference or immutable digest required}"
-image_path="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/opt/agent-tools/bin:/home/cortex/.local/bin:/home/cortex/.local/share/nvim/mason/bin:/usr/local/bin:/usr/bin:/bin"
+image_path="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/opt/agent-tools/node_modules/.bin:/home/cortex/.local/bin:/home/cortex/.local/share/nvim/mason/bin:/usr/local/bin:/usr/bin:/bin"
 suffix="$(date +%s)-$$"
 state_volume="aes12-cortex-state-$suffix"
 workspace_volume="aes12-cortex-workspace-$suffix"
@@ -34,6 +34,10 @@ cleanup() {
 trap cleanup EXIT
 
 docker pull "$image" >/dev/null 2>&1 || docker image inspect "$image" >/dev/null
+[[ "$(docker image inspect "$image" --format '{{.Architecture}}')" == arm64 ]] || {
+  echo "Cortex image is not ARM64" >&2
+  exit 1
+}
 docker volume create "$state_volume" >/dev/null
 docker volume create "$workspace_volume" >/dev/null
 
@@ -227,6 +231,7 @@ printf '%s' "$labels" | jq -e '
   .["io.rlabs.cortex.state-schema"] == "1" and
   .["io.rlabs.cortex.workspace-schema"] == "1" and
   .["io.rlabs.cortex.base.image"] == "registry.fedoraproject.org/fedora:44@sha256:590825dbaee41a97a162ecdffc3305264bd11cb3ff1e9cfd710d41ca5f936134" and
+  .["io.rlabs.cortex.base.arm64-manifest"] == "sha256:ffe227022b502caaff332d02a9c7852cc38937716d83c4065d895ea1daf8588c" and
   .["io.rlabs.cortex.base.fedora"] == "44" and
   .["io.rlabs.cortex.homebrew.revision"] == "77d90328ca2f63ff4ec1f67de0ade5632f5d2335" and
   .["io.rlabs.cortex.homebrew.core.revision"] == "8f25520c64c1fe6b57f1112d028a72a2a4ce3355" and
@@ -236,6 +241,9 @@ printf '%s' "$labels" | jq -e '
   .["io.rlabs.cortex.base.opencode"] == "1.18.9" and
   .["io.rlabs.cortex.base.zellij"] == "0.44.3"
 ' >/dev/null
+
+docker run --rm --entrypoint /bin/bash "$image" -lc \
+  'cd /etc/cortex-sandbox && sha256sum --check rpm-inventory.tsv.sha256'
 
 image_size="$(docker image inspect "$image" --format '{{.Size}}')"
 max_image_size="$(docker run --rm --entrypoint jq "$image" -r '.sizeBudget.uncompressedBytes' /etc/cortex-sandbox/toolchain.lock.json)"

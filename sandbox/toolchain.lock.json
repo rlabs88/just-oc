@@ -1,18 +1,59 @@
 {
   "schemaVersion": 1,
-  "platform": "linux/amd64",
+  "platform": "linux/arm64",
   "base": {
     "distribution": "fedora",
     "version": "44",
     "image": "registry.fedoraproject.org/fedora:44@sha256:590825dbaee41a97a162ecdffc3305264bd11cb3ff1e9cfd710d41ca5f936134",
-    "amd64Manifest": "sha256:dc2e09efde3550eb94fd08dd484120fc91d4709d042357a5c2c57bd7d75eb1d6"
+    "arm64Manifest": "sha256:ffe227022b502caaff332d02a9c7852cc38937716d83c4065d895ea1daf8588c"
   },
   "homebrew": {
     "repository": "https://github.com/Homebrew/brew.git",
     "revision": "77d90328ca2f63ff4ec1f67de0ade5632f5d2335",
     "coreRepository": "https://github.com/Homebrew/homebrew-core.git",
     "coreRevision": "8f25520c64c1fe6b57f1112d028a72a2a4ce3355",
-    "prefix": "/home/linuxbrew/.linuxbrew"
+    "prefix": "/home/linuxbrew/.linuxbrew",
+    "bottleTag": "arm64_linux",
+    "bottleSha256": {
+      "age": "8aa780ecbc3ba748964014645045b51f7b2b1c42ec5e8681760030c37f8e6640",
+      "bat": "d0211b0cbe32b5b14b76a02a1a15f47c96f677c35102739a3789fb376183b5e4",
+      "bun": "5a1bae01b22520515d132f3b5b208e7666ec9251bb2848f8a84452a0ae69c6bb",
+      "curl": "33f3d4388cc2c8c8a2703b54dfd3f9988af1bb5d3c4e9ba9b4167891108d2333",
+      "direnv": "56ea5661ae3fc5537e236f2cecde9117b7dc83e90cce9269c5edb0d2209caa89",
+      "eza": "401228759a123919e80302eed23d749f59ced13a5ddd964343ef4c13029f9d2e",
+      "fd": "a481618eccb1c59d8350fc0ab4bd1099f7646c04f9eaaa8d139d95445ca77769",
+      "ffmpeg": "947634a5bfc9d2528e49ca232bba628ac4feedf8103d54e1970a76fa6c609c8a",
+      "fzf": "eb416786bc6c35fcbf0a791d4cc7e61c1541842b57a4d67b9e2db8e81884a282",
+      "gh": "4150ed93a34c763d4486228fec0702db013865e1b533e557c2c089e7af905a80",
+      "git": "ea73cb7a909a7c80c2c5474b15b53659dd04b1222efd678e9a693bb06a7ed314",
+      "git-lfs": "b0c10c6238b6b826c078809c7846b44d44ebed18212d61928dfca369e62c74db",
+      "herdr": "38a6f8ffb0e2cefa486fdfee790cf8a3cb8b80535e8c29f1b30c3b73f54a29c2",
+      "infisical": "bf0abc74330308472810e15d860f9e04c877774bd4aea58ae2398eaddbf8c3b0",
+      "jq": "30137e8a68ffb92bc8e16494f1509f0c08b404cae8a0842e15b63f46e4baf028",
+      "just": "c6c07d3f946142800bc78753fd81b09d97da26470ee03622f2db020c8c83941a",
+      "lazygit": "a2a021ae9b976673ca44810f83c9fe5f46967a567fe9cf0d0e653e825b7fc477",
+      "llvm": "a6e3a38557f177517bdd1aa4d4c2f3f6c92c470815ab873f4851154c45a2c48b",
+      "neovim": "c78c28cd3186bd0f415fdba66de7cf795e309ef6dd95e12f79dccb75e7fb1606",
+      "node": "d1b30ee20dd655520c7ae78f2ce7ec8bc781f3d5f1de63656b61560669d7e8b4",
+      "python@3.13": "b42d053cf514d341c91c4baa1543196302f85e4d5b4dae301836bffe9b964fee",
+      "rclone": "0b06dca739c6b27b250e854066b4e42881c3d51615dd716e783b31d8d7d7a3c6",
+      "ripgrep": "f9aaf3150f27c6ee3c67a05e6c54a1d030fd57144eb33e87b2db67784b8b5ff9",
+      "sops": "1bba36aab53ddd2c9e404422eb921a018eb6945db8511ccd791208cb276f8ce0",
+      "starship": "74c2fdb6e9bcb1e4c0642a87828d27b61aa9aece643fb99bdb9b2e6faaadcfe5",
+      "stow": "d0c8d1eb137984030db04350a3efc522c26a486be22f6e940dbcd0f30927edf9",
+      "tailscale": "6ba584f460e7e1f5f812f4c8cf91ccbb4cf3a3aa869c3f8792ae1df345493ba1",
+      "tmux": "84ae807fef2aae78341be98498cc92aaf6cac13b38d683384a02be3d37eb3549",
+      "tree": "cb6d74ecafcc8b6d736e538b46be79249457e6c417e18b83de65b405b8495557",
+      "tree-sitter": "6bf6ad4f1b4ce6945bbef8f727c7fc6e0af3772dfd93538b3894a7f8042d6f90",
+      "ttyd": "19ae582d056afbe6edd2f5035fd818129fdcb854b93bdb0356f4c45eae4fe3ab",
+      "util-linux": "bc1ad29a5dc203dab6803165abece5a99a99a465e34486b792cd7ad0953bedbf",
+      "uv": "cb37ed97eb605b65d55bb717039b229c748481c01faab42dfb7cf5d1f683e81d",
+      "wget": "f6e698ad339b9d9398f9769ad46ffa999809e9e07ab0e6d9a1537ec136dbaf01",
+      "yazi": "981c7ef81931fce515159a9360b6127d025d66aeaa1db5f607157ada64585be6",
+      "yq": "13fe63ec93608539319dd1602c60ccd6b6e03cc9e7e8490fd9dd680c06a254de",
+      "zellij": "8747da68e69c9a69936e18555de5681aa0ef9311d6449e6bee112d1f590c7590",
+      "zoxide": "e49cb48600200939509b9d1171c041e36f9d93a5b49559b80ae6279940c14861"
+    }
   },
   "dotfiles": {
     "repository": "rlabs88/dotfiles",
@@ -30,7 +71,7 @@
     "age": "1.3.1", "bat": "0.26.1", "curl": "8.21.0", "eza": "0.23.5",
     "fd": "10.4.2", "ffmpeg": "8.1.2", "fzf": "0.74.1", "gh": "2.96.0",
     "git": "2.55.0", "git-lfs": "3.7.1", "infisical": "0.43.114", "jq": "1.8.2",
-    "just": "1.57.0", "lazygit": "0.63.1", "rclone": "1.74.4", "ripgrep": "15.2.0",
+    "just": "1.57.0", "lazygit": "0.63.1", "llvm": "22.1.8", "rclone": "1.74.4", "ripgrep": "15.2.0",
     "sops": "3.13.3", "stow": "2.4.1", "tree": "2.3.2", "wget": "1.25.0",
     "yq": "4.53.3", "zoxide": "0.10.0", "direnv": "2.37.1", "neovim": "0.12.4",
     "starship": "1.26.0", "tmux": "3.7b", "tree-sitter": "0.26.11", "yazi": "26.5.6",
@@ -44,6 +85,13 @@
       "providerFormula": "util-linux",
       "providerVersion": "2.42.2",
       "reason": "locked homebrew/core declares a binary conflict and util-linux is already required"
+    },
+    "clangd": {
+      "requestedProvider": "mason-registry",
+      "providerFormula": "llvm",
+      "providerVersion": "22.1.8",
+      "providerBinary": "/home/linuxbrew/.linuxbrew/opt/llvm/bin/clangd",
+      "reason": "the pinned Mason registry has no linux_arm64 clangd asset; the pinned ARM-native Homebrew llvm bottle provides clangd without emulation or source compilation"
     }
   },
   "npmPackages": {
@@ -52,6 +100,9 @@
     "@zed-industries/codex-acp": "0.16.0",
     "mastracode": "0.32.3",
     "opencode-ai": "1.18.9"
+  },
+  "agentTools": {
+    "packageLockSha256": "df9a82a60d769d79cf50e61beee2d102b2e6fcd73221fde77e98141f9301c5c7"
   },
   "mason": {
     "registry": {
@@ -73,8 +124,14 @@
         "artifact": "pypi:ruff@0.16.0", "binaries": ["ruff"]
       },
       "clangd": {
-        "version": "22.1.6", "source": "pkg:github/clangd/clangd@22.1.6",
-        "artifact": "clangd-linux-22.1.6.zip", "binaries": ["clangd"]
+        "version": "22.1.8", "source": "homebrew:llvm@22.1.8",
+        "artifact": "homebrew-bottle:llvm:arm64_linux",
+        "binaries": ["clangd"],
+        "adapter": {
+          "kind": "homebrew-keg-link",
+          "formula": "llvm",
+          "sourceBinary": "/home/linuxbrew/.linuxbrew/opt/llvm/bin/clangd"
+        }
       },
       "clang-format": {
         "version": "22.1.8", "source": "pkg:pypi/clang-format@22.1.8",

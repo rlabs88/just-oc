@@ -11,6 +11,8 @@ created="${BUILD_CREATED:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 source="${BUILD_SOURCE:-https://github.com/rlabs88/just-oc}"
 workflow_url="${BUILD_WORKFLOW_URL:-local}"
 dotfiles_revision="$(jq -r '.dotfiles.revision' "$lock")"
+fedora_image="$(jq -r '.base.image' "$lock")"
+fedora_arm64_manifest="$(jq -r '.base.arm64Manifest' "$lock")"
 
 [[ -z "$(git -C "$dotfiles_checkout" status --porcelain)" ]] || {
   echo "dotfiles checkout must be clean" >&2
@@ -19,6 +21,16 @@ dotfiles_revision="$(jq -r '.dotfiles.revision' "$lock")"
 [[ "$(git -C "$dotfiles_checkout" rev-parse HEAD)" == "$dotfiles_revision" ]] || {
   echo "dotfiles checkout does not match locked revision $dotfiles_revision" >&2
   exit 2
+}
+"$root/sandbox/verify-dotfiles-source.sh" "$dotfiles_checkout"
+
+resolved_arm64_manifest="$(
+  docker buildx imagetools inspect "$fedora_image" --raw \
+    | jq -er '.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64") | .digest'
+)"
+[[ "$resolved_arm64_manifest" == "$fedora_arm64_manifest" ]] || {
+  echo "Fedora index ARM64 child changed: resolved $resolved_arm64_manifest, expected $fedora_arm64_manifest" >&2
+  exit 1
 }
 
 docker buildx build --load \
@@ -30,7 +42,8 @@ docker buildx build --load \
   --build-arg "BUILD_REVISION=$revision" \
   --build-arg "BUILD_SOURCE=$source" \
   --build-arg "BUILD_WORKFLOW_URL=$workflow_url" \
-  --build-arg "FEDORA_IMAGE=$(jq -r '.base.image' "$lock")" \
+  --build-arg "FEDORA_IMAGE=$fedora_image" \
+  --build-arg "FEDORA_ARM64_MANIFEST=$fedora_arm64_manifest" \
   --build-arg "BREW_REVISION=$(jq -r '.homebrew.revision' "$lock")" \
   --build-arg "BREW_CORE_REVISION=$(jq -r '.homebrew.coreRevision' "$lock")" \
   --build-arg "DOTFILES_REVISION=$dotfiles_revision" \

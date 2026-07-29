@@ -14,7 +14,7 @@ compatibility contract did not live in this repository.
 
 ## Present
 
-The shared Fedora base is described by one immutable toolchain manifest and
+The shared ARM64 Fedora base is described by one immutable toolchain manifest and
 contains the pinned headless Linuxbrew, dotfiles, editor, agent CLI, and runtime
 graph required by the gateway and maintained plugins. The named `cortex` image
 layers the current just-oc plugins and configuration on that base, declares

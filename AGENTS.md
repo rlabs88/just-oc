@@ -31,6 +31,10 @@ reports.
 Add `AGENTS.md` and `CONTEXT.md` together only for meaningful ownership
 boundaries. Do not recreate legacy agents, research, analysis, deployment,
 spike, general test, or orchestration directories in this repository.
+- `sandbox/` is the maintained image-source boundary. It owns the shared
+  runtime base, named agent image configurations, compatibility probes, and
+  image-local startup behavior. Deployment credentials, registry publication,
+  host lifecycle, caching, and ingress remain outside this repository.
 - Keep plugin loaders behavior-free apart from re-exporting or delegating to a
   maintained bundle entry point. Do not add a second runtime or scrape private
   OpenCode state.
@@ -57,12 +61,17 @@ as an upstream capability gap.
 - This repository does not own general skills, research archives, deployment
   infrastructure, generated telemetry, test archives, speculative spikes, or
   external submodules.
+- Sandbox builds accept provenance as non-secret build metadata. They never
+  accept registry, Linear, GitHub, or model credentials as build arguments or
+  copy them into image layers.
 
 ## Validation
 
 Run `bun install --frozen-lockfile`, `bun run typecheck`, and
 `bun run validate:plugins`. For new agent transforms, add deterministic ignored
 smoke validation and remove its fixtures after the run.
+
+For sandbox changes, also run `bun test` and `bun run validate:sandbox`.
 
 For installer changes, run `just oc install`, then verify the generated files in
 `~/.config/opencode/plugins` point at this checkout and that project-local

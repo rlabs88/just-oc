@@ -1,0 +1,13 @@
+{
+  "name": "cortex-agent-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frozen transitive install surface for Cortex agent CLIs",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.220",
+    "@openai/codex": "0.146.0",
+    "@zed-industries/codex-acp": "0.16.0",
+    "mastracode": "0.32.3",
+    "opencode-ai": "1.18.9"
+  }
+}

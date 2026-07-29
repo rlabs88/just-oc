@@ -5,6 +5,7 @@ export interface CompatibilityManifest {
   stateSchema: number
   workspaceSchema: number
   openCodeVersion: string
+  provisioningSchema?: string
   build: { createdAt: string; revision: string; source: string; workflowUrl?: string }
 }
 

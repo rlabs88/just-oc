@@ -19,16 +19,19 @@ for (const bundle of bundles) {
 }
 
 const projectConfig = await Bun.file("/opt/just-oc/.opencode/opencode.json").json()
+const toolchain = await Bun.file(`${root}/toolchain.lock.json`).json()
 await writeFile(
   `${root}/config/opencode/opencode.json`,
   `${JSON.stringify(projectConfig, null, 2)}\n`,
 )
 
 const compatibility = {
-  compatibilityVersion: Number(process.env.COMPATIBILITY_VERSION || "1"),
-  stateSchema: 1,
-  workspaceSchema: 1,
-  openCodeVersion: "1.17.5",
+  compatibilityVersion: Number(process.env.COMPATIBILITY_VERSION || toolchain.compatibilityVersion),
+  stateSchema: toolchain.stateSchema,
+  workspaceSchema: toolchain.workspaceSchema,
+  provisioningSchema: toolchain.provisioningSchema,
+  openCodeVersion: toolchain.npmPackages["opencode-ai"],
+  baseline: toolchain,
   build: {
     createdAt: process.env.BUILD_CREATED || "unknown",
     revision: process.env.BUILD_REVISION || "unknown",

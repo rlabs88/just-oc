@@ -8,7 +8,7 @@ import type {
 export const ROLE_IDS = ["cortex", "flux", "zen"] as const
 export type RoleId = (typeof ROLE_IDS)[number]
 
-export const PLUGIN_IDS = ["background-tasks", "zellij", "command-run"] as const
+export const PLUGIN_IDS = ["background-tasks", "zellij", "command-run", "adhd"] as const
 export type IndependentPluginId = (typeof PLUGIN_IDS)[number]
 
 export const HOOK_IDS = ["tool-audit"] as const

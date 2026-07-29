@@ -157,8 +157,12 @@ describe("Flux prompt profile", () => {
 
   test("matches Cortex's capability ceiling while differing in posture", () => {
     expect(flux.nativeToolCatalog).toEqual(cortex.nativeToolCatalog)
-    expect([...flux.plugins].sort()).toEqual([...cortex.plugins].sort())
-    expect(flux.permissions).toEqual(cortex.permissions)
+    // Flux's ceiling is Cortex's plus the divergence instrument. The delta is
+    // asserted rather than the equality relaxed: ADHD is the single capability
+    // the divergent archetype holds that the convergent one does not, and a
+    // second divergence would be a drift worth failing on.
+    expect([...flux.plugins].sort()).toEqual([...cortex.plugins, "adhd" as const].sort())
+    expect(flux.permissions).toEqual({ ...cortex.permissions, adhd_run: "allow" })
     expect(flux.model.steps).toBe(cortex.model.steps)
     expect(flux.model.temperature).toBeGreaterThan(cortex.model.temperature ?? 0)
   })

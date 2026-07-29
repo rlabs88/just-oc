@@ -53,7 +53,10 @@ as an upstream capability gap.
 
 - Credentials and hard-coded machine paths never enter tracked files.
 - One Bun lockfile describes the TypeScript dependency graph.
-- Bundles compile and initialize independently.
+- Bundles compile and initialize independently, and no bundle imports another.
+  Each bundle asserts this about itself in its own tests. A bundle needing
+  session dispatch owns its own; the OpenCode client is the shared surface, not a
+  sibling bundle.
 - This repository does not own general skills, research archives, deployment
   infrastructure, generated telemetry, test archives, speculative spikes, or
   external submodules.

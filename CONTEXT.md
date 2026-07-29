@@ -16,11 +16,17 @@ without duplicating imperative rules.
 
 ## Present
 
-The repository owns four independent plugin bundles under `plugins/`:
-Background Tasks, Zellij, Command Run, and Agent Archetype System. Project
-loaders under `.opencode/plugins/` make those bundles available to OpenCode
-without replacing OpenCode's runtime. `Justfile` provides the explicit
-`just oc install` path for local dependencies and global OpenCode wrappers.
+The repository owns five independent plugin bundles under `plugins/`: Background
+Tasks, Zellij, Command Run, Agent Archetype System, and ADHD. Project loaders
+under `.opencode/plugins/` make those bundles available to OpenCode without
+replacing OpenCode's runtime. `Justfile` provides the explicit `just oc install`
+path for local dependencies and global OpenCode wrappers.
+
+Background Tasks and ADHD both open child sessions, and both do so through the
+OpenCode client rather than through each other. Their dispatch code is
+deliberately not shared: Background Tasks must return a session id before the
+work finishes, while ADHD must await a whole phase before starting the next, and
+one primitive serving both contracts is wider than either needs.
 
 ## Future
 

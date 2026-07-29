@@ -17,6 +17,7 @@ export const flux = {
   },
   permissions: {
     "*": "allow",
+    adhd_run: "allow",
     command_run: "allow",
     command_run_read: "allow",
     command_run_glob: "allow",
@@ -32,7 +33,7 @@ export const flux = {
     disabled: ["read", "glob", "grep", "apply_patch"],
     retained: ["bash", "webfetch", "task", "todowrite", "skill"],
   },
-  plugins: ["background-tasks", "zellij", "command-run"],
+  plugins: ["background-tasks", "zellij", "command-run", "adhd"],
   hooks: ["tool-audit"],
   prompts: fluxPrompt,
 } satisfies ArchetypeConfig

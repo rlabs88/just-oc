@@ -1,0 +1,11 @@
+.git
+.github
+.mcp.json
+.scratch
+node_modules
+skill-bank
+**/.DS_Store
+**/._*
+**/*.log
+**/.env
+**/.env.*

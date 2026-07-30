@@ -142,6 +142,7 @@ async function divergeBranch(
 async function scoreIdeas(
   dispatch: BranchDispatch,
   problem: string,
+  context: string | undefined,
   ideas: Idea[],
   model: { providerID: string; modelID: string } | undefined,
 ): Promise<Map<string, Score>> {
@@ -150,10 +151,7 @@ async function scoreIdeas(
   const raw = await dispatch({
     title: "adhd: score",
     system: SCORE_SYSTEM,
-    prompt: `PROBLEM:
-${problem}
-
-IDEAS (id → text):
+    prompt: `${problemBlock(problem, context)}IDEAS (id → text):
 ${ideas.map((idea) => `${idea.id} :: ${idea.text}`).join("\n")}
 
 Score each. Output a JSON array.
@@ -200,6 +198,7 @@ itself the hazard.
 async function clusterIdeas(
   dispatch: BranchDispatch,
   problem: string,
+  context: string | undefined,
   ideas: Idea[],
   model: { providerID: string; modelID: string } | undefined,
 ): Promise<Cluster[]> {
@@ -208,10 +207,7 @@ async function clusterIdeas(
     const raw = await dispatch({
       title: "adhd: cluster",
       system: CLUSTER_SYSTEM,
-      prompt: `PROBLEM:
-${problem}
-
-IDEAS:
+      prompt: `${problemBlock(problem, context)}IDEAS:
 ${ideas.map((idea) => `${idea.id} :: ${idea.text}`).join("\n")}
 
 Output JSON: [{"label":"...","ideaIds":["...","..."]}]`,
@@ -228,6 +224,7 @@ Output JSON: [{"label":"...","ideaIds":["...","..."]}]`,
 async function deepenIdea(
   dispatch: BranchDispatch,
   problem: string,
+  context: string | undefined,
   idea: Idea,
   siblings: Idea[],
   model: { providerID: string; modelID: string } | undefined,
@@ -245,10 +242,7 @@ async function deepenIdea(
     const raw = await dispatch({
       title: "adhd: deepen",
       system: DEEPEN_SYSTEM,
-      prompt: `PROBLEM:
-${problem}
-
-FOCUS IDEA:
+      prompt: `${problemBlock(problem, context)}FOCUS IDEA:
 ${idea.text}
 ${idea.rationale ? `(${idea.rationale})` : ""}
 
@@ -362,8 +356,8 @@ export async function run(dispatch: BranchDispatch, options: RunOptions): Promis
 
   // PHASE 2 — SCORE + CLUSTER. The critic comes back online.
   const [scores, clusters] = await Promise.all([
-    scoreIdeas(dispatch, problem, allIdeas, critic),
-    clusterIdeas(dispatch, problem, allIdeas, critic),
+    scoreIdeas(dispatch, problem, context, allIdeas, critic),
+    clusterIdeas(dispatch, problem, context, allIdeas, critic),
   ])
   for (const idea of allIdeas) idea.score = scores.get(idea.id)
   for (const cluster of clusters) {
@@ -410,7 +404,7 @@ export async function run(dispatch: BranchDispatch, options: RunOptions): Promis
     ranked.slice(0, topK).map((idea) =>
       limit(async () => {
         onEvent?.({ kind: "deepen:start", ideaId: idea.id, text: idea.text })
-        const result = await deepenIdea(dispatch, problem, idea, allIdeas, model, onEvent)
+        const result = await deepenIdea(dispatch, problem, context, idea, allIdeas, model, onEvent)
         onEvent?.({ kind: "deepen:done", ideaId: idea.id })
         return result
       }),

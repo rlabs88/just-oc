@@ -11,8 +11,8 @@ applies_to: ["**/*"]
 
 ## Read first
 
-Read `STANDARD.md`, `engine.ts`, and `prompts.ts` before changing a phase. Read
-`dispatch.ts` before changing how a branch is opened.
+Read `CONTEXT.md`, `STANDARD.md`, `engine.ts`, and `prompts.ts` before changing a
+phase. Read `dispatch.ts` before changing how a branch is opened.
 
 ## Operating rules
 

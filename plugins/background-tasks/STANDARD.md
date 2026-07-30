@@ -26,7 +26,9 @@ nothing about how they run.
 Task state has one manager owner, tool results are serializable, and plugin
 initialization performs no durable writes, network call, or external process
 launch. A launched task reports its child session id before `launch` returns, and
-a cancelled task is never overwritten by a late completion.
+a cancelled task is never overwritten by a late completion. Terminal success
+and failure inject one no-reply system reminder into the parent session so the
+caller can retrieve the result without polling blindly.
 
 ## Extension rules
 

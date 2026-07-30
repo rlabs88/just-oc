@@ -9,14 +9,16 @@
 
 import {
   createDispatchSession,
+  notifyDispatchParent,
   runDispatchPrompt,
   type DispatchClient,
+  type ParentNotificationClient,
 } from "../../shared/dispatch"
 import { log } from "../../shared/logger"
 import type { BackgroundManager } from "./manager-interface"
 import type { BackgroundTask, LaunchInput } from "./types"
 
-export type BackgroundManagerClient = DispatchClient & {
+export type BackgroundManagerClient = DispatchClient & ParentNotificationClient & {
   session: { abort: (args: { path: { id: string } }) => Promise<unknown> }
 }
 
@@ -90,6 +92,25 @@ export class SessionBackgroundManager implements BackgroundManager {
       log("[background_task] task failed", { id: task.id, error: task.error })
     } finally {
       task.completedAt = new Date()
+    }
+
+    await this.notifyParent(task)
+  }
+
+  private async notifyParent(task: BackgroundTask): Promise<void> {
+    const outcome =
+      task.status === "completed"
+        ? `completed.\nUse background_output with task_id="${task.id}" to retrieve the result.`
+        : `failed: ${task.error ?? "unknown error"}`
+    const reminder = `<system-reminder>\nBackground task "${task.id}" ${outcome}\n</system-reminder>`
+
+    try {
+      await notifyDispatchParent(this.client, task.parentSessionID, reminder)
+    } catch (error) {
+      log("[background_task] parent notification failed", {
+        id: task.id,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 

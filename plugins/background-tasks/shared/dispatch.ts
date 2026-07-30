@@ -44,6 +44,18 @@ export type DispatchClient = {
   }
 }
 
+export type ParentNotificationClient = {
+  session: {
+    promptAsync: (args: {
+      path: { id: string }
+      body: {
+        noReply: true
+        parts: Array<{ type: "text"; text: string }>
+      }
+    }) => Promise<Envelope<void>>
+  }
+}
+
 export type DispatchRequest = {
   /** Session the child is parented to, so the dispatch stays inside the caller's graph. */
   parentSessionID: string
@@ -127,4 +139,24 @@ export async function runDispatchPrompt(
   }
 
   return extractText(result)
+}
+
+/** Inject a host-visible reminder without starting another model response. */
+export async function notifyDispatchParent(
+  client: ParentNotificationClient,
+  parentSessionID: string,
+  text: string,
+): Promise<void> {
+  const result = await client.session.promptAsync({
+    path: { id: parentSessionID },
+    body: {
+      noReply: true,
+      parts: [{ type: "text", text }],
+    },
+  })
+
+  if (result && typeof result === "object" && "error" in result && result.error) {
+    const message = result.error instanceof Error ? result.error.message : JSON.stringify(result.error)
+    throw new Error(`parent notification failed: ${message}`)
+  }
 }

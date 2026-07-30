@@ -152,7 +152,7 @@ export function selectFrames(n: number, codeMode = true, random: () => number = 
     : [...FRAMES]
   const wild = FRAMES.filter((frame) => frame.tags.includes("wild"))
 
-  const picked = shuffle(pool, random).slice(0, Math.max(1, target - 1))
+  const picked = shuffle(pool, random).slice(0, Math.max(0, target - 1))
   const wildPick = wild[Math.floor(random() * wild.length)]!
   if (!picked.some((frame) => frame.id === wildPick.id)) picked.push(wildPick)
 

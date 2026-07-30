@@ -131,6 +131,19 @@ describe("branch isolation", () => {
 })
 
 describe("generator / critic split", () => {
+  test("convergence phases retain caller context", async () => {
+    const { dispatch, calls } = fakeDispatch()
+    await run(dispatch, { ...baseOptions, context: "React 19, Postgres, no Redis" })
+
+    const convergence = calls.filter((call) =>
+      [SCORE_SYSTEM, CLUSTER_SYSTEM, DEEPEN_SYSTEM].includes(call.system),
+    )
+    expect(convergence.length).toBeGreaterThan(0)
+    for (const call of convergence) {
+      expect(call.prompt).toContain("CONTEXT:\nReact 19, Postgres, no Redis")
+    }
+  })
+
   test("generation and evaluation run as separate dispatches under separate systems", async () => {
     const { dispatch, calls } = fakeDispatch()
     await run(dispatch, baseOptions)
@@ -342,6 +355,17 @@ describe("frame selection", () => {
       const random = () => ((seed + calls++) % 10) / 10
       const frames = selectFrames(5, true, random)
       expect(frames.some((frame) => frame.tags.includes("wild"))).toBe(true)
+    }
+  })
+
+  test("a one-frame run selects a wild vantage", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      let calls = 0
+      const random = () => ((seed + calls++) % 10) / 10
+      const frames = selectFrames(1, true, random)
+
+      expect(frames).toHaveLength(1)
+      expect(frames[0]?.tags).toContain("wild")
     }
   })
 

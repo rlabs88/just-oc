@@ -7,6 +7,7 @@ type Deferred = { resolve: (text: string) => void; reject: (error: Error) => voi
 function fakeClient(options: { failCreate?: boolean; defer?: boolean } = {}) {
   const aborted: string[] = []
   const prompted: Array<{ sessionID: string; agent?: string }> = []
+  const notifications: Array<{ sessionID: string; text: string }> = []
   let counter = 0
   let pending: Deferred | undefined
 
@@ -32,10 +33,17 @@ function fakeClient(options: { failCreate?: boolean; defer?: boolean } = {}) {
         aborted.push(args.path.id)
         return {}
       },
+      async promptAsync(args) {
+        notifications.push({
+          sessionID: args.path.id,
+          text: args.body.parts[0]?.text ?? "",
+        })
+        return {}
+      },
     },
   }
 
-  return { client, aborted, prompted, settle: () => pending! }
+  return { client, aborted, prompted, notifications, settle: () => pending! }
 }
 
 const launchInput = {
@@ -59,13 +67,19 @@ describe("launch", () => {
   })
 
   test("records the result when the prompt settles", async () => {
-    const { client } = fakeClient()
+    const { client, notifications } = fakeClient()
     const manager = new SessionBackgroundManager(client)
     const task = await manager.launch(launchInput)
 
     await tick()
     expect(manager.getTask(task.id)?.status).toBe("completed")
     expect(manager.getTask(task.id)?.result).toBe("the result")
+    expect(notifications).toEqual([
+      {
+        sessionID: "parent_1",
+        text: expect.stringContaining(`<system-reminder>\nBackground task "${task.id}" completed.`),
+      },
+    ])
   })
 
   test("returns before the prompt completes", async () => {
@@ -91,7 +105,7 @@ describe("launch", () => {
   })
 
   test("a failed prompt is recorded as an error", async () => {
-    const { client, settle } = fakeClient({ defer: true })
+    const { client, notifications, settle } = fakeClient({ defer: true })
     const manager = new SessionBackgroundManager(client)
     const task = await manager.launch(launchInput)
 
@@ -100,6 +114,12 @@ describe("launch", () => {
 
     expect(manager.getTask(task.id)?.status).toBe("error")
     expect(manager.getTask(task.id)?.error).toContain("provider exploded")
+    expect(notifications).toEqual([
+      {
+        sessionID: "parent_1",
+        text: expect.stringContaining(`<system-reminder>\nBackground task "${task.id}" failed:`),
+      },
+    ])
   })
 })
 

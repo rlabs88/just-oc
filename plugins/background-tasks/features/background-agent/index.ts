@@ -1,7 +1,6 @@
 export * from "./types"
 
-// BackgroundManager is exported from manager.ts but has deep dependency chains.
-// For now, re-export the type interface that the tools need.
-// The actual BackgroundManager implementation is in manager.ts (kept as reference)
-// and will be wired up via the plugin entry point.
+// `manager-interface.ts` is the contract the tools are written against;
+// `manager.ts` is the implementation the plugin entry point wires in.
 export type { BackgroundManager } from "./manager-interface"
+export { SessionBackgroundManager, type BackgroundManagerClient } from "./manager"

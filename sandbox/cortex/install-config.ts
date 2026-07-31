@@ -2,7 +2,12 @@ import { mkdir, writeFile } from "node:fs/promises"
 
 const root = "/etc/cortex-sandbox"
 const pluginDirectory = `${root}/config/opencode/plugins`
+// The image's own bundle set, distinct from the host installer's. `ae2e` belongs
+// here because a provisioned sandbox is where an AE2E run actually executes, and
+// the bundle is inert until a control-plane kickoff arrives — loading it costs a
+// session that is not under the policy nothing.
 const bundles = [
+  "ae2e",
   "agent-archetype-system",
   "background-tasks",
   "command-run",

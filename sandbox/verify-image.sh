@@ -269,6 +269,9 @@ if docker history --no-trunc "$image" | rg -i \
 fi
 
 config_json="$(docker image inspect "$image" --format '{{json .Config}}')"
+printf '%s' "$config_json" | jq -e '
+  (.Env // []) | index("OPENCODE_EXPERIMENTAL_WORKSPACES=true") != null
+' >/dev/null
 if printf '%s' "$config_json" | jq -e '
   ((.Env // []) + [(.Labels // {} | to_entries[] | "\(.key)=\(.value)")])
   | any(test("(LINEAR|GITHUB|OCIR|OPENAI|ANTHROPIC).*(TOKEN|SECRET|KEY)="; "i"))

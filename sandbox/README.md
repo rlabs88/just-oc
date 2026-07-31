@@ -51,6 +51,13 @@ The descriptor provisions an ordered repository set below `/workspace/repos`
 and the OpenCode server starts in its declared primary repository. See
 `cortex/provisioning.md` for the closed schema and transactional behavior.
 
+The named Cortex image explicitly enables OpenCode's experimental workspace
+support with `OPENCODE_EXPERIMENTAL_WORKSPACES=true`. Git repositories and
+their local worktrees can therefore participate in OpenCode's experimental
+workspace APIs. This flag does not make the Web/Desktop opened-project
+catalogue server-backed or automatically open every Git repository in an
+attached browser; that catalogue remains a client-owned OpenCode surface.
+
 Repository and model credentials are runtime-only inputs. OCIR publication and
 its immutable provenance record are intentionally owned by Homelab Toolkit.
 Credentialed publication is manual-only from the protected default branch and

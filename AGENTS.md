@@ -18,7 +18,10 @@ reports.
 
 ## Operating rules
 
-- Keep maintained source under `plugins/<bundle>/`.
+- Keep maintained runtime plugins under `plugins/<bundle>/`.
+- Keep tracked OpenCode and MCP configuration under the supported OpenCode
+  configuration surface; this repository configures OpenCode but does not own
+  the OpenCode runtime.
 - Keep `.opencode/plugins/` files as thin re-export loaders only.
 - Let OpenCode own sessions, execution, permissions, tools, authentication, and the agent loop.
 - Keep prompts model-neutral unless an issue explicitly requires a model-specific adapter.
@@ -31,15 +34,36 @@ reports.
 Add `AGENTS.md` and `CONTEXT.md` together only for meaningful ownership
 boundaries. Do not recreate legacy agents, research, analysis, deployment,
 spike, general test, or orchestration directories in this repository.
-- `sandbox/` is the maintained image-source boundary. It owns the shared
-  runtime base, named agent image configurations, compatibility probes, and
-  image-local startup behavior. Deployment credentials, registry publication,
-  host lifecycle, caching, and ingress remain outside this repository.
+- `sandbox/` is retired historical material from the superseded local image
+  boundary. Do not build, publish, deploy, or extend it. Change it only under
+  explicit removal or migration scope.
+- External sandbox builders may consume a pinned clean revision of this
+  repository as OpenCode configuration and runtime-plugin source. The consumer
+  owns image composition, toolchains, provisioning, validation, publication,
+  host lifecycle, caching, ingress, and deployment. Keep consumer-specific
+  overlays and generated state in the consumer; do not back-port them here.
 - Keep plugin loaders behavior-free apart from re-exporting or delegating to a
   maintained bundle entry point. Do not add a second runtime or scrape private
   OpenCode state.
 - Create a new bundle only for cohesive behavior with an independent OpenCode
   entry point, and give it its own local checkpoint pair.
+
+## Scope discipline
+
+- Treat ownership, boundary, and non-goal statements as repository-placement
+  constraints only. They do not authorize work in another repository, host,
+  credential store, service manager, or publishing workflow.
+- Interpret "outside this repository" as "do not implement it here," not as a
+  direction to redirect the task elsewhere. Expand the execution surface only
+  when the user or implementing Linear issue explicitly selects it.
+- For plan-only requests, separate requested outcomes and observed facts from
+  optional implementation choices. Do not present inferred deployment,
+  persistence, publication, or lifecycle mechanisms as settled requirements.
+- Treat external repositories and systems named in checkpoint context as
+  references, not active task scope.
+- Never add deployment instructions, service definitions, registry workflows,
+  host configuration, or secret-manager wiring to this repository merely
+  because a consumer imports it.
 
 ## Runtime boundaries
 
@@ -64,9 +88,7 @@ as an upstream capability gap.
 - This repository does not own general skills, research archives, deployment
   infrastructure, generated telemetry, test archives, speculative spikes, or
   external submodules.
-- Sandbox builds accept provenance as non-secret build metadata. They never
-  accept registry, Linear, GitHub, or model credentials as build arguments or
-  copy them into image layers.
+- Consumer build provenance and deployment policy do not enter this repository.
 
 ## Validation
 
@@ -74,14 +96,12 @@ Run `bun install --frozen-lockfile`, `bun run typecheck`, and
 `bun run validate:plugins`. For new agent transforms, add deterministic ignored
 smoke validation and remove its fixtures after the run.
 
-For sandbox changes, also run `bun test` and `bun run validate:sandbox`.
-
 For installer changes, run `just oc install`, then verify the generated files in
 `~/.config/opencode/plugins` point at this checkout and that project-local
 loaders suppress duplicate global initialization.
 
 ## Handoff
 
-Report changed bundles, OpenCode extension points used, validation commands,
-and residual provider/runtime limitations. Link the implementing Linear issue
-and PR rather than duplicating their history here.
+Report changed configuration or bundles, OpenCode extension points used,
+validation commands, and residual provider/runtime limitations. Link the
+implementing Linear issue and PR rather than duplicating their history here.

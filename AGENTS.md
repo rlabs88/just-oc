@@ -34,14 +34,13 @@ reports.
 Add `AGENTS.md` and `CONTEXT.md` together only for meaningful ownership
 boundaries. Do not recreate legacy agents, research, analysis, deployment,
 spike, general test, or orchestration directories in this repository.
-- `sandbox/` is retired historical material from the superseded local image
-  boundary. Do not build, publish, deploy, or extend it. Change it only under
-  explicit removal or migration scope.
-- External sandbox builders may consume a pinned clean revision of this
-  repository as OpenCode configuration and runtime-plugin source. The consumer
-  owns image composition, toolchains, provisioning, validation, publication,
-  host lifecycle, caching, ingress, and deployment. Keep consumer-specific
-  overlays and generated state in the consumer; do not back-port them here.
+- The former `sandbox/` image graph has been removed. Do not recreate sandbox
+  composition, provisioning, toolchains, image validation, or deployment here.
+- External consumers may use a pinned clean revision of this repository as
+  OpenCode configuration and runtime-plugin source. The consumer owns image
+  composition, toolchains, provisioning, validation, publication, host
+  lifecycle, caching, ingress, and deployment. Keep consumer-specific overlays
+  and generated state in the consumer; do not back-port them here.
 - Keep plugin loaders behavior-free apart from re-exporting or delegating to a
   maintained bundle entry point. Do not add a second runtime or scrape private
   OpenCode state.

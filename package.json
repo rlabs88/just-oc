@@ -8,8 +8,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "validate:plugins": "bun --eval \"const context = { client: {} }; for (const path of ['./plugins/background-tasks/index.ts', './plugins/zellij/index.ts', './plugins/command-run/index.ts', './plugins/adhd/index.ts']) { const plugin = (await import(path)).default; const hooks = await plugin(context); if (!hooks?.tool) throw new Error(path + ' did not initialize tools'); } const archetypes = (await import('./plugins/agent-archetype-system/index.ts')).default; const hooks = await archetypes(context); const config = {}; await hooks.config(config); for (const id of ['cortex', 'flux', 'zen']) if (config.agent?.[id]?.mode !== 'all') throw new Error(id + ' is not primary-selectable'); const project = await Bun.file('./.opencode/opencode.json').json(); if (project.default_agent !== 'cortex') throw new Error('cortex is not the default agent'); for (const path of ['./.opencode/plugins/background-tasks.ts', './.opencode/plugins/zellij.ts', './.opencode/plugins/command-run.ts', './.opencode/plugins/adhd.ts', './.opencode/plugins/agent-archetype-system.ts']) await import(path);\"",
-    "validate:sandbox": "bash sandbox/validate.sh",
-    "check": "bun run typecheck && bun run validate:plugins",
+    "validate:ownership": "bun --eval \"const tracked = Bun.spawnSync(['git', 'ls-files'], { stdout: 'pipe' }); if (tracked.exitCode !== 0) throw new Error('git ls-files failed'); const paths = tracked.stdout.toString().trim().split('\\n').filter(Boolean); const candidates = paths.filter((path) => path === 'sandbox' || path.startsWith('sandbox/')); const forbidden = []; for (const path of candidates) if (await Bun.file(path).exists()) forbidden.push(path); if (forbidden.length) throw new Error('tracked sandbox ownership remains: ' + forbidden.join(', ')); const pkg = await Bun.file('./package.json').json(); if (pkg.scripts?.['validate:sandbox']) throw new Error('validate:sandbox remains');\"",
+    "check": "bun run typecheck && bun run validate:plugins && bun run validate:ownership",
     "test": "bun test"
   },
   "dependencies": {

@@ -15,9 +15,10 @@ maintained in `AGENTS.md`; this file preserves the boundary's orientation
 without duplicating imperative rules.
 
 An early sandbox image graph lived under `sandbox/`. [AES-21](https://linear.app/rt88/issue/AES-21/publish-the-canonical-aes-sandbox-from-agent-toolkit-to-ghcr)
-moved the canonical development and runtime image graph to Agent Toolkit after
-establishing that image composition did not belong with OpenCode plugin
-behavior.
+moved the canonical development and runtime image graph out after establishing
+that image composition did not belong with OpenCode plugin behavior. AES-75
+removed the retired tree entirely; deployment consumers now compose images from
+an exact pinned clean `just-oc` revision.
 
 ## Present
 
@@ -28,10 +29,10 @@ make those bundles available to OpenCode without replacing OpenCode's runtime.
 `Justfile` provides the explicit `just oc install` path for local dependencies
 and global OpenCode wrappers.
 
-Agent Toolkit owns the canonical sandbox image graph and consumes an exact
-pinned `just-oc` revision as a separate source context. That relationship makes
-this repository an input to the sandbox build, not the owner of its build,
-publication, deployment, host lifecycle, or runtime operation.
+Cortex Cloud deployment consumers own sandbox and control-plane image graphs
+and consume an exact pinned `just-oc` revision as a build-time source. That
+relationship makes this repository a configuration/plugin input, not the owner
+of image build, publication, deployment, host lifecycle, or runtime operation.
 
 Background Tasks and ADHD both open child sessions, and both do so through the
 OpenCode client rather than through each other. Their dispatch code is
